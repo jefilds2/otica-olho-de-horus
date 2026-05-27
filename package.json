@@ -8,7 +8,7 @@
     "dev": "node --watch src/server.js",
     "dev:api": "node --watch src/server.js",
     "dev:site": "npm --prefix frontend run dev",
-    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "build": "npm --prefix frontend install --include=dev && npm --prefix frontend run build",
     "build:site": "npm --prefix frontend run build"
   },
   "keywords": [],

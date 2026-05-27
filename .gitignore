@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.*
+.env2
+!.env.example
+uploads/
+dist/
+frontend/dist/
+frontend/node_modules/
+Itens de referencia do site/
+CNPJ.txt
+*.log
+*.md
+!README.md
+*.pdf
+*.txt
