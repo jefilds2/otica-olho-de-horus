@@ -1,0 +1,8 @@
+const { resolve } = require('node:path');
+
+
+module.exports = { //configurações do sequelize (ORM para o banco de dados)
+    config: resolve(__dirname, 'src', 'config', 'database.cjs'), //caminho do arquivo de configuração
+    'migrations-path': resolve(__dirname, 'src', 'database', 'migrations'), //caminho das migrações de criação e atualização
+    'models-path': resolve(__dirname, 'src', 'app', 'models'), //caminho dos models (que representam as tabelas do banco de dados)
+};
