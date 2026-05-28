@@ -1717,7 +1717,7 @@ export const AdminPage = styled.section`
 
   .editor-recorte-preview {
     position: relative;
-    width: min(100%, 360px);
+    width: min(100%, 320px);
     aspect-ratio: 1 / 1;
     justify-self: center;
     overflow: hidden;
