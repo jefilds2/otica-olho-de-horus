@@ -274,6 +274,17 @@ function obterEscalaCover(largura, altura, viewport = RECORTE_VIEWPORT) {
   return Math.max(viewport / Math.max(largura, 1), viewport / Math.max(altura, 1))
 }
 
+function obterZoomMinimoRecorte(largura, altura, viewport = RECORTE_VIEWPORT) {
+  const larguraSegura = Math.max(largura, 1)
+  const alturaSegura = Math.max(altura, 1)
+  const escalaCover = obterEscalaCover(larguraSegura, alturaSegura, viewport)
+  const escalaContain = Math.min(viewport / larguraSegura, viewport / alturaSegura)
+
+  if (!Number.isFinite(escalaCover) || escalaCover <= 0) return 1
+
+  return Math.min(1, Math.max(0.15, escalaContain / escalaCover))
+}
+
 function obterDimensoesPreviewRecorte(largura, altura, zoom = 1) {
   const escalaBase = obterEscalaCover(largura, altura)
 
@@ -297,21 +308,25 @@ function limitarOffsetRecorte(offset, tamanhoNatural, outroTamanhoNatural, zoom,
 
 function ajustarEstadoRecorte(estado, atualizacoes = {}) {
   const proximo = { ...estado, ...atualizacoes }
+  const zoomMinimo = obterZoomMinimoRecorte(proximo.naturalWidth, proximo.naturalHeight)
+  const zoomMaximo = 3
+  const zoomAjustado = Math.min(zoomMaximo, Math.max(zoomMinimo, Number(proximo.zoom) || 1))
 
   return {
     ...proximo,
+    zoom: zoomAjustado,
     offsetX: limitarOffsetRecorte(
       proximo.offsetX,
       proximo.naturalWidth,
       proximo.naturalHeight,
-      proximo.zoom,
+      zoomAjustado,
       'x',
     ),
     offsetY: limitarOffsetRecorte(
       proximo.offsetY,
       proximo.naturalHeight,
       proximo.naturalWidth,
-      proximo.zoom,
+      zoomAjustado,
       'y',
     ),
   }
@@ -337,7 +352,7 @@ async function gerarArquivoRecortado({
   const imagem = await carregarImagem(previewUrl)
   const canvas = document.createElement('canvas')
   const tamanhoSaida = 800
-  const tipoSaida = fileType === 'image/png' || fileType === 'image/webp' ? fileType : 'image/jpeg'
+  const tipoSaida = 'image/png'
   const escalaBase = obterEscalaCover(imagem.naturalWidth, imagem.naturalHeight, tamanhoSaida)
   const escalaFinal = escalaBase * zoom
   const largura = imagem.naturalWidth * escalaFinal
@@ -352,6 +367,7 @@ async function gerarArquivoRecortado({
   const contexto = canvas.getContext('2d')
   contexto.imageSmoothingEnabled = true
   contexto.imageSmoothingQuality = 'high'
+  contexto.clearRect(0, 0, tamanhoSaida, tamanhoSaida)
   contexto.drawImage(imagem, dx, dy, largura, altura)
 
   const blob = await new Promise((resolve, reject) => {
@@ -365,7 +381,8 @@ async function gerarArquivoRecortado({
     }, tipoSaida, 0.92)
   })
 
-  return new File([blob], fileName, { type: tipoSaida, lastModified: Date.now() })
+  const nomeBase = String(fileName || 'imagem-recortada').replace(/\.[^.]+$/, '')
+  return new File([blob], `${nomeBase}.png`, { type: tipoSaida, lastModified: Date.now() })
 }
 
 const produtoInicial = {
@@ -4399,18 +4416,27 @@ export function Admin() {
               </div>
 
               <div className="editor-recorte-ajustes">
+                {(() => {
+                  const zoomMinimo = obterZoomMinimoRecorte(
+                    cropEditor.naturalWidth,
+                    cropEditor.naturalHeight,
+                  )
+
+                  return (
                 <label>
                   Zoom
                   <input
                     type="range"
-                    min="1"
+                    min={String(zoomMinimo)}
                     max="3"
                     step="0.01"
                     value={cropEditor.zoom}
                     onChange={(e) => atualizarZoomRecorte(e.target.value)}
                   />
                 </label>
-                <small>O enquadramento acima já representa o corte final da imagem no card.</small>
+                  )
+                })()}
+                <small>Você pode aproximar ou afastar a imagem. O enquadramento acima representa o corte final do card.</small>
               </div>
             </div>
 

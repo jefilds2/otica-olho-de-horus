@@ -1,8 +1,6 @@
 import { createGlobalStyle } from 'styled-components'
 
 export const GlobalStyles = createGlobalStyle`
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap');
-
   :root {
     --cor-fundo: #fbfcfd;
     --cor-texto: #1b2435;

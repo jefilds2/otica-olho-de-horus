@@ -66,6 +66,26 @@ function formatarEndereco(endereco) {
     .join(' | ')
 }
 
+function somenteDigitos(valor) {
+  return String(valor || '').replace(/\D/g, '')
+}
+
+function formatarCep(valor) {
+  const digitos = somenteDigitos(valor).slice(0, 8)
+  if (digitos.length <= 5) return digitos
+  return `${digitos.slice(0, 5)}-${digitos.slice(5)}`
+}
+
+function formatarTelefone(valor) {
+  const digitos = somenteDigitos(valor).slice(0, 11)
+
+  if (!digitos) return ''
+  if (digitos.length <= 2) return `(${digitos}`
+  if (digitos.length <= 6) return `(${digitos.slice(0, 2)}) ${digitos.slice(2)}`
+  if (digitos.length <= 10) return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`
+  return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`
+}
+
 function obterStatusEnvioPedido(pedido) {
   if (pedido?.fulfillment_status) {
     return statusEnvioMap[pedido.fulfillment_status] || { label: pedido.fulfillment_status, className: 'badge' }
@@ -122,7 +142,7 @@ export function Cliente() {
     setEnderecoForm((atual) => ({
       ...atual,
       recipient_name: atual.recipient_name || form.name || '',
-      phone: atual.phone || form.phone || form.whatsapp || '',
+      phone: atual.phone || formatarTelefone(form.phone || form.whatsapp || ''),
     }))
   }, [form])
 
@@ -144,7 +164,7 @@ export function Cliente() {
     setEnderecoForm({
       ...enderecoInicial,
       recipient_name: form.name || '',
-      phone: form.phone || form.whatsapp || '',
+      phone: formatarTelefone(form.phone || form.whatsapp || ''),
     })
   }, [enderecos.length, form])
 
@@ -180,7 +200,15 @@ export function Cliente() {
   }
 
   function alterarEndereco(campo, valor) {
-    setEnderecoForm((atual) => ({ ...atual, [campo]: valor }))
+    let valorFormatado = valor
+
+    if (campo === 'cep') {
+      valorFormatado = formatarCep(valor)
+    } else if (campo === 'phone') {
+      valorFormatado = formatarTelefone(valor)
+    }
+
+    setEnderecoForm((atual) => ({ ...atual, [campo]: valorFormatado }))
   }
 
   function abrirNovoEndereco() {
@@ -189,7 +217,7 @@ export function Cliente() {
     setEnderecoForm({
       ...enderecoInicial,
       recipient_name: form.name || '',
-      phone: form.phone || form.whatsapp || '',
+      phone: formatarTelefone(form.phone || form.whatsapp || ''),
     })
     setMostrarFormularioEndereco(true)
   }
@@ -214,11 +242,17 @@ export function Cliente() {
   async function salvarEndereco(evento) {
     evento.preventDefault()
     try {
+      const payloadEndereco = {
+        ...enderecoForm,
+        phone: somenteDigitos(enderecoForm.phone || ''),
+        cep: somenteDigitos(enderecoForm.cep || ''),
+      }
+
       if (enderecoEditandoId) {
-        await atualizarEndereco(enderecoEditandoId, enderecoForm)
+        await atualizarEndereco(enderecoEditandoId, payloadEndereco)
         toast.success('Endereço atualizado.')
       } else {
-        await cadastrarEndereco(enderecoForm)
+        await cadastrarEndereco(payloadEndereco)
         toast.success('Endereço cadastrado.')
       }
 
@@ -227,7 +261,7 @@ export function Cliente() {
       setEnderecoForm({
         ...enderecoInicial,
         recipient_name: form.name || '',
-        phone: form.phone || form.whatsapp || '',
+        phone: formatarTelefone(form.phone || form.whatsapp || ''),
       })
       setEnderecoEditandoId(null)
       setMostrarFormularioEndereco(false)
@@ -242,8 +276,8 @@ export function Cliente() {
     setEnderecoForm({
       label: endereco.label || '',
       recipient_name: endereco.recipient_name || '',
-      phone: endereco.phone || '',
-      cep: endereco.cep || '',
+      phone: formatarTelefone(endereco.phone || ''),
+      cep: formatarCep(endereco.cep || ''),
       street: endereco.street || '',
       number: endereco.number || '',
       complement: endereco.complement || '',
@@ -270,7 +304,7 @@ export function Cliente() {
         setEnderecoForm({
           ...enderecoInicial,
           recipient_name: form.name || '',
-          phone: form.phone || form.whatsapp || '',
+          phone: formatarTelefone(form.phone || form.whatsapp || ''),
         })
       }
       toast.success('Endereço removido.')
@@ -567,7 +601,7 @@ export function Cliente() {
                         setEnderecoForm({
                           ...enderecoInicial,
                           recipient_name: form.name || '',
-                          phone: form.phone || form.whatsapp || '',
+                          phone: formatarTelefone(form.phone || form.whatsapp || ''),
                         })
                       }}>
                         <Plus size={16} />
@@ -584,8 +618,8 @@ export function Cliente() {
                   </div>
                   <label>Identificação<input value={enderecoForm.label} onChange={(e) => alterarEndereco('label', e.target.value)} placeholder="Casa, trabalho, consultório..." required /></label>
                   <label>Destinatário<input value={enderecoForm.recipient_name} onChange={(e) => alterarEndereco('recipient_name', e.target.value)} required /></label>
-                  <label>Telefone<input value={enderecoForm.phone} onChange={(e) => alterarEndereco('phone', e.target.value)} /></label>
-                  <label>CEP<input value={enderecoForm.cep} onChange={(e) => alterarEndereco('cep', e.target.value)} required /></label>
+                  <label>Telefone<input value={enderecoForm.phone} onChange={(e) => alterarEndereco('phone', e.target.value)} placeholder="(00) 00000-0000" /></label>
+                  <label>CEP<input value={enderecoForm.cep} onChange={(e) => alterarEndereco('cep', e.target.value)} placeholder="00000-000" required /></label>
                   <label>Rua<input value={enderecoForm.street} onChange={(e) => alterarEndereco('street', e.target.value)} required /></label>
                   <label>Número<input value={enderecoForm.number} onChange={(e) => alterarEndereco('number', e.target.value)} required /></label>
                   <label>Complemento<input value={enderecoForm.complement} onChange={(e) => alterarEndereco('complement', e.target.value)} /></label>
