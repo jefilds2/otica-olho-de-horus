@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import Product from '../models/Product.js';
 import Coupon from '../models/Coupon.js';
 import StoreSetting from '../models/StoreSetting.js';
+import { literal } from 'sequelize';
 import { getMercadoPagoPayment } from '../../config/mercadoPago.js';
 import { sendServerError } from '../../utils/http.js';
 import {
@@ -461,7 +462,7 @@ class OrderController {
         try {
             const orders = await Order.findAll({
                 where: { user_id: req.userId },
-                order: [['created_at', 'DESC']],
+                order: literal('`Order`.`created_at` DESC'),
                 include: [
                     {
                         model: OrderItem,
@@ -479,7 +480,7 @@ class OrderController {
     async indexAdmin(_req, res) {
         try {
             const orders = await Order.findAll({
-                order: [['created_at', 'DESC']],
+                order: literal('`Order`.`created_at` DESC'),
                 include: [
                     {
                         model: OrderItem,

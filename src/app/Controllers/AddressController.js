@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { Op } from 'sequelize';
+import { Op, literal } from 'sequelize';
 import Address from '../models/Address.js';
 import User from '../models/User.js';
 import { sendServerError } from '../../utils/http.js';
@@ -73,7 +73,7 @@ class AddressController {
 
             const addresses = await Address.findAll({
                 where: { user_id: req.userId },
-                order: [['is_default', 'DESC'], ['created_at', 'DESC']],
+                order: [literal('`Address`.`is_default` DESC'), literal('`Address`.`created_at` DESC')],
             });
 
             return res.status(200).json(addresses.map(formatAddress));
@@ -207,7 +207,7 @@ class AddressController {
             if (wasDefault) {
                 const nextAddress = await Address.findOne({
                     where: { user_id: req.userId },
-                    order: [['created_at', 'DESC']],
+                    order: literal('`Address`.`created_at` DESC'),
                 });
 
                 if (nextAddress) {

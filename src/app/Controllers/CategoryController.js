@@ -1,4 +1,5 @@
 import * as Yup from 'yup';
+import { literal } from 'sequelize';
 import Category from '../models/Category.js';
 import Product from '../models/Product.js';
 import { sendServerError } from '../../utils/http.js';
@@ -9,7 +10,7 @@ class CategoryController {
     async index(req, res) {
         try {
             const categories = await Category.findAll({
-                order: [['created_at', 'DESC']],
+                order: literal('`Category`.`created_at` DESC'),
                 attributes: ['id', 'name', 'slug', 'path', 'createdAt', 'updatedAt'],
             });
 

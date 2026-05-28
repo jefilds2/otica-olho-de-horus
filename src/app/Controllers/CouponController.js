@@ -1,5 +1,6 @@
 import * as Yup from 'yup';
 import Coupon from '../models/Coupon.js';
+import { literal } from 'sequelize';
 import Product from '../models/Product.js';
 import { findValidCouponByCode, normalizeCouponCode } from '../../services/coupons.js';
 import { sendServerError } from '../../utils/http.js';
@@ -128,7 +129,7 @@ class CouponController {
     async indexAdmin(_req, res) {
         try {
             const coupons = await Coupon.findAll({
-                order: [['created_at', 'DESC']],
+                order: literal('`Coupon`.`created_at` DESC'),
             });
 
             return res.status(200).json(coupons.map((coupon) => formatCoupon(coupon)));

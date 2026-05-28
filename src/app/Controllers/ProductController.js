@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { Op } from 'sequelize';
+import { Op, literal } from 'sequelize';
 import Product from '../models/Product.js';
 import Category from '../models/Category.js';
 import { sendServerError } from '../../utils/http.js';
@@ -93,7 +93,7 @@ class ProductController {
                         [Op.gt]: 0,
                     },
                 },
-                order: [['created_at', 'DESC']],
+                order: literal('`Product`.`created_at` DESC'),
                 include: [
                     {
                         model: Category,
@@ -112,7 +112,7 @@ class ProductController {
     async indexAdmin(req, res) {
         try {
             const products = await Product.findAll({
-                order: [['created_at', 'DESC']],
+                order: literal('`Product`.`created_at` DESC'),
                 include: [
                     {
                         model: Category,
