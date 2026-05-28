@@ -73,7 +73,7 @@ class AddressController {
 
             const addresses = await Address.findAll({
                 where: { user_id: req.userId },
-                order: [['is_default', 'DESC'], ['createdAt', 'DESC']],
+                order: [['is_default', 'DESC'], ['created_at', 'DESC']],
             });
 
             return res.status(200).json(addresses.map(formatAddress));
@@ -207,7 +207,7 @@ class AddressController {
             if (wasDefault) {
                 const nextAddress = await Address.findOne({
                     where: { user_id: req.userId },
-                    order: [['createdAt', 'DESC']],
+                    order: [['created_at', 'DESC']],
                 });
 
                 if (nextAddress) {

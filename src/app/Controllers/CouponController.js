@@ -128,7 +128,7 @@ class CouponController {
     async indexAdmin(_req, res) {
         try {
             const coupons = await Coupon.findAll({
-                order: [['createdAt', 'DESC']],
+                order: [['created_at', 'DESC']],
             });
 
             return res.status(200).json(coupons.map((coupon) => formatCoupon(coupon)));

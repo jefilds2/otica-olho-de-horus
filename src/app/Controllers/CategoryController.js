@@ -9,7 +9,7 @@ class CategoryController {
     async index(req, res) {
         try {
             const categories = await Category.findAll({
-                order: [['createdAt', 'DESC']],
+                order: [['created_at', 'DESC']],
                 attributes: ['id', 'name', 'slug', 'path', 'createdAt', 'updatedAt'],
             });
 

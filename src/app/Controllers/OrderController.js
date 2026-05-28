@@ -461,7 +461,7 @@ class OrderController {
         try {
             const orders = await Order.findAll({
                 where: { user_id: req.userId },
-                order: [['createdAt', 'DESC']],
+                order: [['created_at', 'DESC']],
                 include: [
                     {
                         model: OrderItem,
@@ -479,7 +479,7 @@ class OrderController {
     async indexAdmin(_req, res) {
         try {
             const orders = await Order.findAll({
-                order: [['createdAt', 'DESC']],
+                order: [['created_at', 'DESC']],
                 include: [
                     {
                         model: OrderItem,

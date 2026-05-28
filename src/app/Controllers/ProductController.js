@@ -93,7 +93,7 @@ class ProductController {
                         [Op.gt]: 0,
                     },
                 },
-                order: [['createdAt', 'DESC']],
+                order: [['created_at', 'DESC']],
                 include: [
                     {
                         model: Category,
@@ -112,7 +112,7 @@ class ProductController {
     async indexAdmin(req, res) {
         try {
             const products = await Product.findAll({
-                order: [['createdAt', 'DESC']],
+                order: [['created_at', 'DESC']],
                 include: [
                     {
                         model: Category,
