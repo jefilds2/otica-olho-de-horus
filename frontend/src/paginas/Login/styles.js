@@ -13,8 +13,8 @@ export const LoginPage = styled.section`
   }
 
   .card-acesso {
-    width: min(100%, 520px);
-    padding: 30px 28px 26px;
+    width: min(100%, 660px);
+    padding: 34px 34px 30px;
     border: 1px solid rgba(34, 55, 88, 0.08);
     border-radius: 22px;
     background: rgba(255, 255, 255, 0.98);
@@ -73,8 +73,16 @@ export const LoginPage = styled.section`
   .form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-    margin-bottom: 16px;
+    gap: 16px 14px;
+    margin-bottom: 18px;
+  }
+
+  .form-grid > label.campo-meio {
+    grid-column: span 1;
+  }
+
+  .form-grid > label.campo-inteiro {
+    grid-column: 1 / -1;
   }
 
   .form-grid-acesso {
@@ -99,9 +107,32 @@ export const LoginPage = styled.section`
   }
 
   .acoes-acesso .link-botao {
-    margin-top: 0;
+    margin-top: 2px;
     justify-self: center;
     color: var(--cor-primaria);
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1;
+    padding: 8px 14px;
+    border-radius: 999px;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  }
+
+  .acoes-acesso .link-botao:hover {
+    background: rgba(34, 55, 88, 0.08);
+    color: #16386a;
+    transform: translateY(-1px);
+  }
+
+  .acoes-acesso .link-botao:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(34, 55, 88, 0.14);
+  }
+
+  @media (min-width: 641px) {
+    .form-grid-acesso {
+      align-items: end;
+    }
   }
 
   @media (max-width: 640px) {
@@ -128,6 +159,13 @@ export const LoginPage = styled.section`
 
     .form-grid {
       grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .form-grid > label,
+    .form-grid > label.campo-meio,
+    .form-grid > label.campo-inteiro {
+      grid-column: auto;
     }
   }
 `

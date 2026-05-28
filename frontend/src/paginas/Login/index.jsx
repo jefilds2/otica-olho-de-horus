@@ -5,6 +5,35 @@ import { toast } from 'react-toastify'
 import { useAuth } from '../../contextos/AuthContext'
 import { cadastrarUsuario, obterMensagemErroUsuario } from '../../servicos/api'
 
+function aplicarMascaraCpf(valor) {
+  const digitos = String(valor || '').replace(/\D/g, '').slice(0, 11)
+
+  return digitos
+    .replace(/^(\d{3})(\d)/, '$1.$2')
+    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1-$2')
+}
+
+function aplicarMascaraData(valor) {
+  const digitos = String(valor || '').replace(/\D/g, '').slice(0, 8)
+
+  if (digitos.length <= 2) return digitos
+  if (digitos.length <= 4) return `${digitos.slice(0, 2)}/${digitos.slice(2)}`
+  return `${digitos.slice(0, 2)}/${digitos.slice(2, 4)}/${digitos.slice(4)}`
+}
+
+function normalizarDataParaApi(valor) {
+  const digitos = String(valor || '').replace(/\D/g, '')
+
+  if (digitos.length !== 8) return null
+
+  const dia = digitos.slice(0, 2)
+  const mes = digitos.slice(2, 4)
+  const ano = digitos.slice(4, 8)
+
+  return `${ano}-${mes}-${dia}`
+}
+
 export function Login() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -25,7 +54,11 @@ export function Login() {
 
     try {
       if (modoCadastro) {
-        await cadastrarUsuario(form)
+        await cadastrarUsuario({
+          ...form,
+          cpf: String(form.cpf || '').replace(/\D/g, ''),
+          birth_date: normalizarDataParaApi(form.birth_date),
+        })
         toast.success('Cadastro criado. Agora faça login.')
         setSearchParams({})
         return
@@ -50,17 +83,49 @@ export function Login() {
 
         {modoCadastro && (
           <div className="form-grid">
-            <label>Nome<input value={form.name} onChange={(e) => alterarCampo('name', e.target.value)} required /></label>
-            <label>CPF<input value={form.cpf} onChange={(e) => alterarCampo('cpf', e.target.value)} required /></label>
-            <label>Data de nascimento<input type="date" value={form.birth_date} onChange={(e) => alterarCampo('birth_date', e.target.value)} /></label>
-            <label>Telefone<input value={form.phone} onChange={(e) => alterarCampo('phone', e.target.value)} /></label>
-            <label>WhatsApp<input value={form.whatsapp} onChange={(e) => alterarCampo('whatsapp', e.target.value)} /></label>
+            <label className="campo-inteiro">
+              Nome
+              <input value={form.name} onChange={(e) => alterarCampo('name', e.target.value)} required />
+            </label>
+            <label className="campo-meio">
+              CPF
+              <input
+                value={form.cpf}
+                onChange={(e) => alterarCampo('cpf', aplicarMascaraCpf(e.target.value))}
+                inputMode="numeric"
+                placeholder="000.000.000-00"
+                required
+              />
+            </label>
+            <label className="campo-meio">
+              Data de nascimento
+              <input
+                value={form.birth_date}
+                onChange={(e) => alterarCampo('birth_date', aplicarMascaraData(e.target.value))}
+                inputMode="numeric"
+                placeholder="dd/mm/aaaa"
+              />
+            </label>
+            <label className="campo-meio">
+              Telefone
+              <input value={form.phone} onChange={(e) => alterarCampo('phone', e.target.value)} />
+            </label>
+            <label className="campo-meio">
+              WhatsApp
+              <input value={form.whatsapp} onChange={(e) => alterarCampo('whatsapp', e.target.value)} />
+            </label>
           </div>
         )}
 
         <div className={modoCadastro ? 'form-grid form-grid-acesso' : 'campos-acesso'}>
-          <label>E-mail<input type="email" value={form.email} onChange={(e) => alterarCampo('email', e.target.value)} required /></label>
-          <label>Senha<input type="password" value={form.password} onChange={(e) => alterarCampo('password', e.target.value)} required minLength={6} /></label>
+          <label className={modoCadastro ? 'campo-inteiro' : ''}>
+            E-mail
+            <input type="email" value={form.email} onChange={(e) => alterarCampo('email', e.target.value)} required />
+          </label>
+          <label className={modoCadastro ? 'campo-inteiro' : ''}>
+            Senha
+            <input type="password" value={form.password} onChange={(e) => alterarCampo('password', e.target.value)} required minLength={6} />
+          </label>
         </div>
 
         <div className="acoes-acesso">
