@@ -37,8 +37,8 @@ const formatUser = (user) => ({
     is_active: user.is_active,
     email_verified_at: user.email_verified_at,
     last_login_at: user.last_login_at,
-    created_at: user.created_at,
-    updated_at: user.updated_at,
+    created_at: user.createdAt ?? user.created_at,
+    updated_at: user.updatedAt ?? user.updated_at,
 });
 
 class UserController {

@@ -24,8 +24,6 @@ class User extends Model {
             is_active: Sequelize.BOOLEAN,
             email_verified_at: Sequelize.DATE,
             last_login_at: Sequelize.DATE,
-            created_at: Sequelize.DATE,
-            updated_at: Sequelize.DATE,
         }, {
             sequelize,
             tableName: 'users',
