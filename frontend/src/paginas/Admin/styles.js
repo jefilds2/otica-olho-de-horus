@@ -1734,12 +1734,18 @@ export const AdminPage = styled.section`
 
   .editor-recorte-preview img {
     position: absolute;
+    top: 50%;
+    left: 50%;
     transform-origin: center center;
     pointer-events: none;
     user-select: none;
     -webkit-user-drag: none;
     max-width: none;
     max-height: none;
+  }
+
+  .editor-recorte-imagem {
+    position: absolute;
   }
 
   .editor-recorte-mascara {
@@ -1766,6 +1772,23 @@ export const AdminPage = styled.section`
 
   .editor-recorte-ajustes input[type='range'] {
     width: 100%;
+  }
+
+  .editor-recorte-rotacao {
+    display: grid;
+    gap: 10px;
+  }
+
+  .editor-recorte-rotacao span {
+    color: var(--cor-texto);
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .editor-recorte-rotacao div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .editor-recorte-acoes {

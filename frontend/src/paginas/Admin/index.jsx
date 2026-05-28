@@ -100,6 +100,7 @@ const cropEditorInicial = {
   fileName: '',
   fileType: 'image/jpeg',
   zoom: 1,
+  rotation: 0,
   offsetX: 0,
   offsetY: 0,
   naturalWidth: 1,
@@ -274,6 +275,27 @@ function obterEscalaCover(largura, altura, viewport = RECORTE_VIEWPORT) {
   return Math.max(viewport / Math.max(largura, 1), viewport / Math.max(altura, 1))
 }
 
+function normalizarRotacaoRecorte(rotacao) {
+  const numero = Number(rotacao) || 0
+  return ((numero % 360) + 360) % 360
+}
+
+function obterDimensoesRotacionadas(largura, altura, rotacao = 0) {
+  const rotacaoNormalizada = normalizarRotacaoRecorte(rotacao)
+
+  if (rotacaoNormalizada === 90 || rotacaoNormalizada === 270) {
+    return {
+      largura: Math.max(altura, 1),
+      altura: Math.max(largura, 1),
+    }
+  }
+
+  return {
+    largura: Math.max(largura, 1),
+    altura: Math.max(altura, 1),
+  }
+}
+
 function obterZoomMinimoRecorte(largura, altura, viewport = RECORTE_VIEWPORT) {
   const larguraSegura = Math.max(largura, 1)
   const alturaSegura = Math.max(altura, 1)
@@ -285,21 +307,29 @@ function obterZoomMinimoRecorte(largura, altura, viewport = RECORTE_VIEWPORT) {
   return Math.min(1, Math.max(0.15, escalaContain / escalaCover))
 }
 
-function obterDimensoesPreviewRecorte(largura, altura, zoom = 1) {
-  const escalaBase = obterEscalaCover(largura, altura)
+function obterDimensoesPreviewRecorte(largura, altura, zoom = 1, rotation = 0) {
+  const dimensoesRotacionadas = obterDimensoesRotacionadas(largura, altura, rotation)
+  const escalaBase = obterEscalaCover(dimensoesRotacionadas.largura, dimensoesRotacionadas.altura)
 
   return {
-    larguraBase: largura * escalaBase,
-    alturaBase: altura * escalaBase,
-    larguraFinal: largura * escalaBase * zoom,
-    alturaFinal: altura * escalaBase * zoom,
+    larguraBase: dimensoesRotacionadas.largura * escalaBase,
+    alturaBase: dimensoesRotacionadas.altura * escalaBase,
+    larguraFinal: dimensoesRotacionadas.largura * escalaBase * zoom,
+    alturaFinal: dimensoesRotacionadas.altura * escalaBase * zoom,
+    larguraImagem: largura * escalaBase * zoom,
+    alturaImagem: altura * escalaBase * zoom,
   }
 }
 
-function limitarOffsetRecorte(offset, tamanhoNatural, outroTamanhoNatural, zoom, eixo) {
-  const escalaBase = obterEscalaCover(tamanhoNatural, outroTamanhoNatural)
-  const larguraExibida = tamanhoNatural * escalaBase * zoom
-  const alturaExibida = outroTamanhoNatural * escalaBase * zoom
+function limitarOffsetRecorte(offset, larguraNatural, alturaNatural, zoom, eixo, rotation = 0) {
+  const { larguraFinal, alturaFinal } = obterDimensoesPreviewRecorte(
+    larguraNatural,
+    alturaNatural,
+    zoom,
+    rotation,
+  )
+  const larguraExibida = larguraFinal
+  const alturaExibida = alturaFinal
   const tamanhoExibido = eixo === 'x' ? larguraExibida : alturaExibida
   const excesso = Math.max(0, (tamanhoExibido - RECORTE_VIEWPORT) / 2)
 
@@ -308,12 +338,19 @@ function limitarOffsetRecorte(offset, tamanhoNatural, outroTamanhoNatural, zoom,
 
 function ajustarEstadoRecorte(estado, atualizacoes = {}) {
   const proximo = { ...estado, ...atualizacoes }
-  const zoomMinimo = obterZoomMinimoRecorte(proximo.naturalWidth, proximo.naturalHeight)
+  const rotation = normalizarRotacaoRecorte(proximo.rotation)
+  const dimensoesRotacionadas = obterDimensoesRotacionadas(
+    proximo.naturalWidth,
+    proximo.naturalHeight,
+    rotation,
+  )
+  const zoomMinimo = obterZoomMinimoRecorte(dimensoesRotacionadas.largura, dimensoesRotacionadas.altura)
   const zoomMaximo = 3
   const zoomAjustado = Math.min(zoomMaximo, Math.max(zoomMinimo, Number(proximo.zoom) || 1))
 
   return {
     ...proximo,
+    rotation,
     zoom: zoomAjustado,
     offsetX: limitarOffsetRecorte(
       proximo.offsetX,
@@ -321,13 +358,15 @@ function ajustarEstadoRecorte(estado, atualizacoes = {}) {
       proximo.naturalHeight,
       zoomAjustado,
       'x',
+      rotation,
     ),
     offsetY: limitarOffsetRecorte(
       proximo.offsetY,
-      proximo.naturalHeight,
       proximo.naturalWidth,
+      proximo.naturalHeight,
       zoomAjustado,
       'y',
+      rotation,
     ),
   }
 }
@@ -346,6 +385,7 @@ async function gerarArquivoRecortado({
   fileName,
   fileType,
   zoom,
+  rotation,
   offsetX,
   offsetY,
 }) {
@@ -353,13 +393,13 @@ async function gerarArquivoRecortado({
   const canvas = document.createElement('canvas')
   const tamanhoSaida = 800
   const tipoSaida = 'image/png'
-  const escalaBase = obterEscalaCover(imagem.naturalWidth, imagem.naturalHeight, tamanhoSaida)
+  const dimensoesRotacionadas = obterDimensoesRotacionadas(imagem.naturalWidth, imagem.naturalHeight, rotation)
+  const escalaBase = obterEscalaCover(dimensoesRotacionadas.largura, dimensoesRotacionadas.altura, tamanhoSaida)
   const escalaFinal = escalaBase * zoom
   const largura = imagem.naturalWidth * escalaFinal
   const altura = imagem.naturalHeight * escalaFinal
   const proporcao = tamanhoSaida / RECORTE_VIEWPORT
-  const dx = ((tamanhoSaida - largura) / 2) + (offsetX * proporcao)
-  const dy = ((tamanhoSaida - altura) / 2) + (offsetY * proporcao)
+  const rotacaoRad = (normalizarRotacaoRecorte(rotation) * Math.PI) / 180
 
   canvas.width = tamanhoSaida
   canvas.height = tamanhoSaida
@@ -368,7 +408,14 @@ async function gerarArquivoRecortado({
   contexto.imageSmoothingEnabled = true
   contexto.imageSmoothingQuality = 'high'
   contexto.clearRect(0, 0, tamanhoSaida, tamanhoSaida)
-  contexto.drawImage(imagem, dx, dy, largura, altura)
+  contexto.save()
+  contexto.translate(
+    (tamanhoSaida / 2) + (offsetX * proporcao),
+    (tamanhoSaida / 2) + (offsetY * proporcao),
+  )
+  contexto.rotate(rotacaoRad)
+  contexto.drawImage(imagem, -largura / 2, -altura / 2, largura, altura)
+  contexto.restore()
 
   const blob = await new Promise((resolve, reject) => {
     canvas.toBlob((resultado) => {
@@ -827,6 +874,12 @@ export function Admin() {
     }))
   }
 
+  function rotacionarRecorte(delta) {
+    setCropEditor((atual) => ajustarEstadoRecorte(atual, {
+      rotation: atual.rotation + delta,
+    }))
+  }
+
   function registrarDimensoesRecorte(evento) {
     const { naturalWidth, naturalHeight } = evento.currentTarget
 
@@ -868,6 +921,7 @@ export function Admin() {
         fileName: cropEditor.fileName,
         fileType: cropEditor.fileType,
         zoom: cropEditor.zoom,
+        rotation: cropEditor.rotation,
         offsetX: cropEditor.offsetX,
         offsetY: cropEditor.offsetY,
       })
@@ -4387,29 +4441,38 @@ export function Admin() {
                 role="presentation"
               >
                 {(() => {
-                  const { larguraBase, alturaBase } = obterDimensoesPreviewRecorte(
+                  const { larguraFinal, alturaFinal, larguraImagem, alturaImagem } = obterDimensoesPreviewRecorte(
                     cropEditor.naturalWidth,
                     cropEditor.naturalHeight,
                     cropEditor.zoom,
+                    cropEditor.rotation,
                   )
-                  const left = ((RECORTE_VIEWPORT - larguraBase) / 2) + cropEditor.offsetX
-                  const top = ((RECORTE_VIEWPORT - alturaBase) / 2) + cropEditor.offsetY
+                  const left = ((RECORTE_VIEWPORT - larguraFinal) / 2) + cropEditor.offsetX
+                  const top = ((RECORTE_VIEWPORT - alturaFinal) / 2) + cropEditor.offsetY
 
                   return (
-                <img
-                  src={cropEditor.previewUrl}
-                  alt="Pré-visualização para recorte"
-                  draggable="false"
-                  onDragStart={(evento) => evento.preventDefault()}
-                  onLoad={registrarDimensoesRecorte}
-                  style={{
-                    width: `${larguraBase}px`,
-                    height: `${alturaBase}px`,
-                    left: `${left}px`,
-                    top: `${top}px`,
-                    transform: `scale(${cropEditor.zoom})`,
-                  }}
-                />
+                    <div
+                      className="editor-recorte-imagem"
+                      style={{
+                        width: `${larguraFinal}px`,
+                        height: `${alturaFinal}px`,
+                        left: `${left}px`,
+                        top: `${top}px`,
+                      }}
+                    >
+                      <img
+                        src={cropEditor.previewUrl}
+                        alt="Pré-visualização para recorte"
+                        draggable="false"
+                        onDragStart={(evento) => evento.preventDefault()}
+                        onLoad={registrarDimensoesRecorte}
+                        style={{
+                          width: `${larguraImagem}px`,
+                          height: `${alturaImagem}px`,
+                          transform: `translate(-50%, -50%) rotate(${cropEditor.rotation}deg)`,
+                        }}
+                      />
+                    </div>
                   )
                 })()}
                 <div className="editor-recorte-mascara" />
@@ -4418,24 +4481,45 @@ export function Admin() {
               <div className="editor-recorte-ajustes">
                 {(() => {
                   const zoomMinimo = obterZoomMinimoRecorte(
-                    cropEditor.naturalWidth,
-                    cropEditor.naturalHeight,
+                    obterDimensoesRotacionadas(
+                      cropEditor.naturalWidth,
+                      cropEditor.naturalHeight,
+                      cropEditor.rotation,
+                    ).largura,
+                    obterDimensoesRotacionadas(
+                      cropEditor.naturalWidth,
+                      cropEditor.naturalHeight,
+                      cropEditor.rotation,
+                    ).altura,
                   )
 
                   return (
-                <label>
-                  Zoom
-                  <input
-                    type="range"
-                    min={String(zoomMinimo)}
-                    max="3"
-                    step="0.01"
-                    value={cropEditor.zoom}
-                    onChange={(e) => atualizarZoomRecorte(e.target.value)}
-                  />
-                </label>
+                    <label>
+                      Zoom
+                      <input
+                        type="range"
+                        min={String(zoomMinimo)}
+                        max="3"
+                        step="0.01"
+                        value={cropEditor.zoom}
+                        onChange={(e) => atualizarZoomRecorte(e.target.value)}
+                      />
+                    </label>
                   )
                 })()}
+                <div className="editor-recorte-rotacao">
+                  <span>Rotação</span>
+                  <div>
+                    <button className="botao secundario-admin" type="button" onClick={() => rotacionarRecorte(-90)}>
+                      <RotateCcw size={15} />
+                      Girar à esquerda
+                    </button>
+                    <button className="botao secundario-admin" type="button" onClick={() => rotacionarRecorte(90)}>
+                      <RotateCcw size={15} style={{ transform: 'scaleX(-1)' }} />
+                      Girar à direita
+                    </button>
+                  </div>
+                </div>
                 <small>Você pode aproximar ou afastar a imagem. O enquadramento acima representa o corte final do card.</small>
               </div>
             </div>
