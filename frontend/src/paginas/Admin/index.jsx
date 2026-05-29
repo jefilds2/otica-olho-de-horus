@@ -724,6 +724,7 @@ export function Admin() {
   const [usuarioForm, setUsuarioForm] = useState({
     name: '',
     email: '',
+    cpf: '',
     phone: '',
     whatsapp: '',
     city: '',
@@ -2078,6 +2079,7 @@ export function Admin() {
     setUsuarioForm({
       name: item.name || '',
       email: item.email || '',
+      cpf: item.cpf || '',
       phone: item.phone || '',
       whatsapp: item.whatsapp || '',
       city: item.city || '',
@@ -3935,6 +3937,7 @@ export function Admin() {
                   <div className="admin-form-grid">
                     <label>Nome<input value={usuarioForm.name} onChange={(e) => setUsuarioForm({ ...usuarioForm, name: e.target.value })} required /></label>
                     <label>E-mail<input type="email" value={usuarioForm.email} onChange={(e) => setUsuarioForm({ ...usuarioForm, email: e.target.value })} required /></label>
+                    <label>CPF<input value={usuarioForm.cpf} onChange={(e) => setUsuarioForm({ ...usuarioForm, cpf: e.target.value })} /></label>
                     <label>Telefone<input value={usuarioForm.phone} onChange={(e) => setUsuarioForm({ ...usuarioForm, phone: e.target.value })} /></label>
                     <label>WhatsApp<input value={usuarioForm.whatsapp} onChange={(e) => setUsuarioForm({ ...usuarioForm, whatsapp: e.target.value })} /></label>
                     <label>Cidade<input value={usuarioForm.city} onChange={(e) => setUsuarioForm({ ...usuarioForm, city: e.target.value })} /></label>

@@ -275,6 +275,7 @@ class UserController {
         const Schema = Yup.object({
             name: Yup.string().trim().min(3).max(120),
             email: Yup.string().trim().email(),
+            cpf: Yup.string().nullable(),
             phone: Yup.string().nullable(),
             whatsapp: Yup.string().nullable(),
             city: Yup.string().nullable(),
@@ -300,6 +301,7 @@ class UserController {
                 ...req.body,
                 name: req.body.name == null ? undefined : normalizeText(req.body.name),
                 email: req.body.email == null ? undefined : normalizeEmail(req.body.email),
+                cpf: req.body.cpf == null ? undefined : normalizeDigits(req.body.cpf),
                 phone: req.body.phone == null ? undefined : normalizeText(req.body.phone),
                 whatsapp: req.body.whatsapp == null ? undefined : normalizeText(req.body.whatsapp),
                 city: req.body.city == null ? undefined : normalizeText(req.body.city),
@@ -311,6 +313,14 @@ class UserController {
 
                 if (emailExists && emailExists.id !== user.id) {
                     return res.status(409).json({ error: 'E-mail já cadastrado.' });
+                }
+            }
+
+            if (updatePayload.cpf && updatePayload.cpf !== user.cpf) {
+                const cpfExists = await User.findOne({ where: { cpf: updatePayload.cpf } });
+
+                if (cpfExists && cpfExists.id !== user.id) {
+                    return res.status(409).json({ error: 'CPF já cadastrado.' });
                 }
             }
 
