@@ -240,7 +240,7 @@ class CheckoutController {
                 }
 
                 if (Number(product.stock_quantity) < item.quantity) {
-                    throw new Error(`Estoque insuficiente para "${product.name}".`);
+                    throw new Error(`Estoque insuficiente para "${product.name}". Restam ${Number(product.stock_quantity)} unidade(s) em estoque.`);
                 }
 
                 return {
