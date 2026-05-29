@@ -42,7 +42,7 @@ const senhaInicial = {
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const abasConta = [
-  { id: 'dados', titulo: 'Dados pessoais', descricao: 'Informações usadas para compra, contato e atendimento.', icone: UserRound },
+  { id: 'dados', titulo: 'Dados pessoais', descricao: 'Mantenha seu cadastro sempre atualizado.', icone: UserRound },
   { id: 'pedidos', titulo: 'Meus pedidos', descricao: 'Acompanhe status, pagamento e entrega.', icone: Package },
   { id: 'enderecos', titulo: 'Endereços de entrega', descricao: 'Gerencie seus endereços salvos.', icone: MapPin },
   { id: 'senha', titulo: 'Alterar senha', descricao: 'Atualize sua senha de acesso.', icone: LockKeyhole },
@@ -464,17 +464,19 @@ export function Cliente() {
               <div className="painel-card-topo">
                 <div>
                   <h2>Dados pessoais</h2>
-                  <p>Informações usadas para compra, contato e atendimento.</p>
+                  <p>Atualize seus dados para manter suas compras e comunicações em dia.</p>
                 </div>
               </div>
 
-              <form className="form-grid conteudo-secao" onSubmit={salvar}>
-                <label>Nome<input value={form.name || ''} onChange={(e) => alterarCampo('name', e.target.value)} /></label>
-                <label>E-mail<input type="email" value={form.email || ''} onChange={(e) => alterarCampo('email', e.target.value)} /></label>
+              <form className="form-grid conteudo-secao form-dados-pessoais" onSubmit={salvar}>
+                <label className="campo-largo">Nome<input value={form.name || ''} onChange={(e) => alterarCampo('name', e.target.value)} /></label>
+                <label className="campo-largo">E-mail<input type="email" value={form.email || ''} onChange={(e) => alterarCampo('email', e.target.value)} /></label>
                 <label>Data de nascimento<input type="date" value={form.birth_date || ''} onChange={(e) => alterarCampo('birth_date', e.target.value)} /></label>
                 <label>Telefone<input value={form.phone || ''} onChange={(e) => alterarCampo('phone', e.target.value)} /></label>
                 <label>WhatsApp<input value={form.whatsapp || ''} onChange={(e) => alterarCampo('whatsapp', e.target.value)} /></label>
-                <button className="botao destaque" type="submit">Salvar dados</button>
+                <div className="form-acoes">
+                  <button className="botao destaque" type="submit">Salvar dados</button>
+                </div>
               </form>
             </section>
           ) : null}
@@ -524,6 +526,14 @@ export function Cliente() {
 
                       {pedidoAberto ? (
                         <div className="detalhe-pedido">
+                          <div className="detalhe-pedido-topo">
+                            <div>
+                              <strong>Detalhes do pedido #{pedido.id}</strong>
+                              <span>Confira os itens, pagamento e entrega deste pedido.</span>
+                            </div>
+                            <span className={statusPedido.className}>{statusPedido.label}</span>
+                          </div>
+
                           <div className="detalhe-pedido-grid">
                             <div className="detalhe-bloco">
                               <strong>Itens do pedido</strong>
@@ -658,7 +668,7 @@ export function Cliente() {
                     <div>
                       <span className="chamada-endereco-etiqueta">Próximo passo</span>
                       <strong>Cadastre um novo endereço de entrega</strong>
-                      <p>Use este formulário para salvar um endereço e liberar o frete no checkout sem ficar procurando onde preencher.</p>
+                      <p>Salve um endereço para agilizar suas próximas compras e a escolha da entrega.</p>
                     </div>
                     {!mostrarFormularioEndereco ? (
                       <button className="botao destaque" type="button" onClick={abrirNovoEndereco}>

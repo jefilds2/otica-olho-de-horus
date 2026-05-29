@@ -1415,19 +1415,31 @@ export const AdminPage = styled.section`
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74);
   }
 
+  #form-pedido-admin {
+    border: 2px solid rgba(64, 121, 191, 0.32);
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(244, 249, 255, 0.98), rgba(255, 255, 255, 1));
+    box-shadow:
+      0 22px 42px rgba(34, 55, 88, 0.08),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+  }
+
   .bloco-pedido-admin-status {
-    border: 1px solid rgba(34, 55, 88, 0.14);
+    border: 1px solid rgba(64, 121, 191, 0.24);
     background: linear-gradient(180deg, rgba(34, 55, 88, 0.05), rgba(255, 255, 255, 0.98));
+    box-shadow: 0 14px 30px rgba(64, 121, 191, 0.08);
   }
 
   .bloco-pedido-admin-rastreio {
-    border: 1px solid rgba(51, 168, 177, 0.26);
+    border: 1px solid rgba(51, 168, 177, 0.32);
     background: linear-gradient(180deg, rgba(51, 168, 177, 0.1), rgba(255, 255, 255, 0.98));
+    box-shadow: 0 14px 30px rgba(51, 168, 177, 0.08);
   }
 
   .bloco-pedido-admin-destino {
-    border: 1px solid rgba(223, 182, 81, 0.38);
+    border: 1px solid rgba(223, 182, 81, 0.46);
     background: linear-gradient(180deg, rgba(250, 223, 143, 0.24), rgba(255, 255, 255, 0.98));
+    box-shadow: 0 14px 30px rgba(223, 182, 81, 0.08);
   }
 
   .acoes-melhor-envio {
@@ -2070,6 +2082,12 @@ export const AdminPage = styled.section`
   .detalhe-pedido-admin {
     display: grid;
     gap: 18px;
+    border: 2px solid rgba(64, 121, 191, 0.32);
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(244, 249, 255, 0.98), rgba(255, 255, 255, 1));
+    box-shadow:
+      0 22px 42px rgba(34, 55, 88, 0.08),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.72);
   }
 
   .detalhe-pedido-admin-grid {
@@ -2082,9 +2100,10 @@ export const AdminPage = styled.section`
     display: grid;
     gap: 12px;
     padding: 18px;
-    border: 1px solid rgba(34, 55, 88, 0.1);
+    border: 1px solid rgba(64, 121, 191, 0.18);
     border-radius: 16px;
     background: linear-gradient(180deg, rgba(248, 251, 255, 0.9), rgba(255, 255, 255, 1));
+    box-shadow: 0 12px 24px rgba(34, 55, 88, 0.04);
   }
 
   .detalhe-pedido-admin-bloco.amplo {

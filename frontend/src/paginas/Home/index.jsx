@@ -128,9 +128,8 @@ export function Home() {
         ) : (
           !carregando && (
             <EstadoVazio
-              titulo="Nenhuma categoria cadastrada"
-              texto="Cadastre categorias no painel administrativo para montar a vitrine pública."
-              acao={<Link className="botao" to="/admin">Ir para admin</Link>}
+              titulo="Categorias em breve"
+              texto="Novas coleções e estilos serão adicionados em breve para facilitar sua navegação."
             />
           )
         )}
@@ -140,7 +139,7 @@ export function Home() {
         <div className="titulo-secao">
           <div>
             <h2>Produtos em promoção</h2>
-            <p>Ofertas com destaque visual para reforçar o apelo comercial da home.</p>
+            <p>Selecionamos aqui as melhores oportunidades para você aproveitar.</p>
           </div>
         </div>
         {produtosOferta.length > 0 ? (
@@ -148,7 +147,7 @@ export function Home() {
             {produtosOferta.map((produto) => <ProdutoCard produto={produto} key={produto.id} />)}
           </div>
         ) : (
-          !carregando && <EstadoVazio titulo="Sem ofertas no momento" texto="Cadastre um preço antigo no produto para ativar a promoção." />
+          !carregando && <EstadoVazio titulo="Sem ofertas no momento" texto="No momento não há promoções ativas, mas você pode conferir nossa seleção completa." />
         )}
       </section>
 
@@ -164,16 +163,16 @@ export function Home() {
             {produtosDestaque.map((produto) => <ProdutoCard produto={produto} key={produto.id} />)}
           </div>
         ) : (
-          !carregando && <EstadoVazio titulo="Nenhum produto cadastrado" texto="Quando houver produtos no banco, eles aparecerão automaticamente aqui." />
+          !carregando && <EstadoVazio titulo="Catálogo em atualização" texto="Estamos preparando novos produtos para você conhecer em breve." />
         )}
       </section>
 
       <section className="beneficios">
         {[
           [Headphones, 'Atendimento especializado', 'Orientação para armações, lentes e compra online.'],
-          [Shield, 'Compra segura', 'Autenticação, validações e estrutura preparada para operação real.'],
-          [Truck, 'Entrega e retirada', 'Base preparada para frete e retirada na loja.'],
-          [Award, 'Curadoria da ótica', 'Catálogo organizado pela equipe da Ótica Olho de Hórus.'],
+          [Shield, 'Compra segura', 'Navegação protegida e atendimento confiável do começo ao fim.'],
+          [Truck, 'Entrega e retirada', 'Receba em casa ou escolha a retirada na loja, como preferir.'],
+          [Award, 'Curadoria da ótica', 'Modelos selecionados para unir conforto, estilo e qualidade visual.'],
         ].map(([Icone, titulo, texto]) => (
           <div className="beneficio" key={titulo}>
             <Icone size={28} />

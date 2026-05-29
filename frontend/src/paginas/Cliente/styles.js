@@ -237,6 +237,10 @@ export const ClientePage = styled.section`
     min-width: 0;
   }
 
+  .conta-painel .painel-card {
+    padding: 28px;
+  }
+
   .painel-card {
     border: 1px solid var(--cor-borda);
     border-radius: 20px;
@@ -363,6 +367,34 @@ export const ClientePage = styled.section`
     gap: 14px;
   }
 
+  .form-dados-pessoais {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 16px;
+    align-items: start;
+  }
+
+  .form-dados-pessoais .campo-largo,
+  .form-dados-pessoais .form-acoes {
+    grid-column: 1 / -1;
+  }
+
+  .form-dados-pessoais .campo-largo input {
+    min-height: 54px;
+  }
+
+  .form-acoes {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px solid rgba(47, 94, 164, 0.1);
+    margin-top: 6px;
+  }
+
+  .form-acoes .botao {
+    min-width: 190px;
+    justify-content: center;
+  }
+
   .form-grid label,
   .form-endereco label {
     display: grid;
@@ -373,10 +405,7 @@ export const ClientePage = styled.section`
 
   .lista-pedidos {
     display: grid;
-    gap: 14px;
-    max-height: 720px;
-    overflow-y: auto;
-    padding-right: 6px;
+    gap: 18px;
   }
 
   .lista-pedidos::-webkit-scrollbar {
@@ -391,16 +420,19 @@ export const ClientePage = styled.section`
   .card-pedido {
     display: grid;
     gap: 16px;
-    padding: 18px;
+    padding: 20px;
     border: 1px solid rgba(47, 94, 164, 0.14);
     border-radius: 18px;
     background:
       linear-gradient(180deg, rgba(247, 251, 255, 0.94), rgba(255, 255, 255, 0.98));
+    scroll-margin-top: 120px;
   }
 
   .card-pedido.aberto {
-    border-color: rgba(47, 94, 164, 0.24);
-    box-shadow: 0 18px 34px rgba(47, 94, 164, 0.08);
+    border-color: rgba(47, 94, 164, 0.3);
+    box-shadow: 0 22px 42px rgba(47, 94, 164, 0.12);
+    background:
+      linear-gradient(180deg, rgba(241, 247, 255, 0.98), rgba(255, 255, 255, 1));
   }
 
   .card-pedido-topo {
@@ -512,7 +544,80 @@ export const ClientePage = styled.section`
   .detalhe-pedido {
     display: grid;
     gap: 14px;
-    padding-top: 2px;
+    padding-top: 18px;
+    padding: 18px;
+    margin-top: 4px;
+    border: 2px solid rgba(47, 94, 164, 0.32);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(245, 250, 255, 1), rgba(236, 244, 255, 0.98));
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.78),
+      0 16px 28px rgba(47, 94, 164, 0.08);
+  }
+
+  .detalhe-pedido-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(23, 57, 102, 0.96) 0%, rgba(33, 77, 134, 0.94) 100%);
+    box-shadow: 0 16px 30px rgba(23, 57, 102, 0.18);
+  }
+
+  .detalhe-pedido-topo strong,
+  .detalhe-pedido-topo span {
+    display: block;
+  }
+
+  .detalhe-pedido-topo strong {
+    color: #fff;
+    font-size: 17px;
+  }
+
+  .detalhe-pedido-topo span {
+    margin-top: 4px;
+    color: rgba(255, 255, 255, 0.76);
+    font-size: 13px;
+  }
+
+  .detalhe-pedido-topo .badge {
+    margin-top: 0;
+    min-width: 54px;
+    min-height: 22px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 999px;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+    line-height: 1;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.01em;
+  }
+
+  .detalhe-pedido-topo .badge:not(.sucesso):not(.alerta):not(.perigo) {
+    background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
+    color: #ffffff;
+  }
+
+  .detalhe-pedido-topo .badge.sucesso {
+    background: linear-gradient(180deg, #34d399 0%, #22c55e 100%);
+    color: #ffffff;
+  }
+
+  .detalhe-pedido-topo .badge.alerta {
+    background: linear-gradient(180deg, #f6c453 0%, #e8ad22 100%);
+    color: #5f3f00;
+  }
+
+  .detalhe-pedido-topo .badge.perigo {
+    background: linear-gradient(180deg, #fb7185 0%, #ef4444 100%);
+    color: #ffffff;
   }
 
   .detalhe-pedido-grid {
@@ -723,8 +828,8 @@ export const ClientePage = styled.section`
 
   .enderecos-grid {
     display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: 24px;
+    grid-template-columns: 1fr;
+    gap: 22px;
     align-items: start;
   }
 
@@ -815,13 +920,18 @@ export const ClientePage = styled.section`
   }
 
   .form-endereco {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .bloco-form-endereco {
     display: grid;
     gap: 14px;
     align-content: start;
+  }
+
+  .bloco-form-endereco .chamada-endereco,
+  .bloco-form-endereco .form-endereco {
+    width: 100%;
   }
 
   .chamada-endereco {
@@ -921,6 +1031,7 @@ export const ClientePage = styled.section`
   .form-endereco {
     border-color: rgba(47, 94, 164, 0.18);
     box-shadow: 0 18px 36px rgba(15, 23, 42, 0.06);
+    padding: 24px;
   }
 
   .acoes-form-endereco {
@@ -1008,10 +1119,8 @@ export const ClientePage = styled.section`
       position: static;
     }
 
-    .lista-pedidos {
-      max-height: none;
-      overflow: visible;
-      padding-right: 0;
+    .form-endereco {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
@@ -1037,13 +1146,19 @@ export const ClientePage = styled.section`
       grid-template-columns: 1fr 1fr;
     }
 
+    .form-dados-pessoais,
+    .form-endereco {
+      grid-template-columns: 1fr 1fr;
+    }
+
     .detalhe-pedido-grid {
       grid-template-columns: 1fr;
     }
 
     .detalhe-item,
     .detalhe-linhas p,
-    .botao-secao {
+    .botao-secao,
+    .detalhe-pedido-topo {
       flex-direction: column;
       align-items: stretch;
     }
@@ -1058,6 +1173,7 @@ export const ClientePage = styled.section`
     .form-grid,
     .form-endereco,
     .form-senha,
+    .form-dados-pessoais,
     .cliente-resumo,
     .pedido-metricas,
     .enderecos-grid {
@@ -1070,6 +1186,10 @@ export const ClientePage = styled.section`
     .card-endereco,
     .form-endereco {
       padding: 18px;
+    }
+
+    .conta-painel .painel-card {
+      padding: 20px;
     }
 
     .cliente-avatar {
@@ -1085,7 +1205,8 @@ export const ClientePage = styled.section`
     .botao-toggle-endereco,
     .botao-detalhe-pedido,
     .botao-repagar,
-    .botao {
+    .botao,
+    .form-acoes .botao {
       width: 100%;
       justify-content: center;
     }

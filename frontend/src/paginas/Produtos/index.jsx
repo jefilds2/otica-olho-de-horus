@@ -154,7 +154,7 @@ export function Produtos() {
               {produtosFiltrados.map((produto) => <ProdutoCard produto={produto} key={produto.id} />)}
             </div>
           ) : (
-            <EstadoVazio titulo="Nenhum produto encontrado" texto="Cadastre produtos no admin ou ajuste os filtros do catálogo." />
+            <EstadoVazio titulo="Nenhum produto encontrado" texto="Tente ajustar os filtros ou fazer uma nova busca para encontrar o modelo ideal." />
           )}
         </div>
       </div>
