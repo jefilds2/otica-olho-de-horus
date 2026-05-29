@@ -846,7 +846,7 @@ export function Admin() {
   }, [notificacoesExcluidas])
 
   function limparArquivoCategoriaTemporario(formulario = categoriaForm) {
-    if (formulario?.previewUrl) {
+    if (formulario?.previewUrl?.startsWith('blob:')) {
       URL.revokeObjectURL(formulario.previewUrl)
     }
   }
@@ -1991,7 +1991,11 @@ export function Admin() {
     setFormCategoriaAberto(true)
     setCategoriaForm((atual) => {
       limparArquivoCategoriaTemporario(atual)
-      return { name: categoria.name || '', file: null, previewUrl: '' }
+      return {
+        name: categoria.name || '',
+        file: null,
+        previewUrl: categoria.path ? montarUrlImagem(categoria.path) : '',
+      }
     })
   }
 
@@ -3162,7 +3166,7 @@ export function Admin() {
                           <img src={categoriaForm.previewUrl} alt="Preview da categoria" />
                           <div className="card-imagem-admin-info">
                             <strong>Preview do card da categoria</strong>
-                            <span>{categoriaForm.file?.name}</span>
+                            <span>{categoriaForm.file?.name || 'Imagem atualmente vinculada à categoria'}</span>
                           </div>
                           <div className="card-imagem-admin-acoes">
                             <button className="botao-acao editar" type="button" onClick={abrirEditorRecorteCategoria}>
