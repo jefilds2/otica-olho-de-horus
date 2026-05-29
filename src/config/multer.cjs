@@ -1,4 +1,5 @@
 const multer = require("multer");
+const { mkdirSync } = require("node:fs");
 const { extname, resolve } = require("node:path");
 const { v4 } = require("uuid");
 
@@ -13,9 +14,24 @@ const allowedExtensions = new Set([
     ".png",
 ]);
 
+const uploadsRootDir = resolve(process.cwd(), process.env.UPLOADS_DIR || "uploads");
+
+function resolveUploadDestination(file) {
+    const subdir = file.fieldname === "files" ? "products" : "categories";
+    const destination = resolve(uploadsRootDir, subdir);
+    mkdirSync(destination, { recursive: true });
+    return destination;
+}
+
 module.exports = {
     storage: multer.diskStorage({
-        destination: resolve(__dirname, "..", "..", "uploads"),
+        destination: (_req, file, cb) => {
+            try {
+                return cb(null, resolveUploadDestination(file));
+            } catch (error) {
+                return cb(error);
+            }
+        },
         filename: (_req, file, cb) => {
             const extension = extname(file.originalname || "").toLowerCase();
             if (!allowedExtensions.has(extension)) {

@@ -3,24 +3,25 @@ import { Op, literal } from 'sequelize';
 import Product from '../models/Product.js';
 import Category from '../models/Category.js';
 import { sendServerError } from '../../utils/http.js';
+import { collectRequestUploadPaths, deleteStoredUploads, buildStoredUploadPathFromFile, normalizeStoredUploadPath } from '../../utils/uploadStorage.js';
 
 const normalizeText = (value) => value == null ? null : String(value).trim();
 const normalizeDecimal = (value) => value == null || value === '' ? null : Number(value);
 const normalizeInteger = (value) => value == null || value === '' ? null : Number.parseInt(value, 10);
-const normalizeImagePaths = (files = []) => files.map((file) => file.filename).filter(Boolean).slice(0, 3);
+const normalizeImagePaths = (files = []) => files.map((file) => buildStoredUploadPathFromFile(file)).filter(Boolean).slice(0, 3);
 const parseStoredImagePaths = (product) => {
     if (!product) return [];
 
     try {
         const parsed = product.image_paths ? JSON.parse(product.image_paths) : null;
         if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed.filter(Boolean).slice(0, 3);
+            return parsed.map((item) => normalizeStoredUploadPath(item)).filter(Boolean).slice(0, 3);
         }
     } catch {
         // Mantém compatibilidade com registros antigos.
     }
 
-    return product.path ? [product.path] : [];
+    return product.path ? [normalizeStoredUploadPath(product.path)] : [];
 };
 
 const normalizeExistingImagePaths = (value, product) => {
@@ -35,7 +36,7 @@ const normalizeExistingImagePaths = (value, product) => {
     }
 
     return parsed
-        .map((item) => normalizeText(item))
+        .map((item) => normalizeStoredUploadPath(normalizeText(item)))
         .filter(Boolean)
         .slice(0, 3);
 };
@@ -159,6 +160,7 @@ class ProductController {
         try {
             schema.validateSync(req.body, { abortEarly: false });
         } catch (error) {
+            await deleteStoredUploads(collectRequestUploadPaths(req));
             return res.status(400).json({ error: error.errors || ['Dados do produto inválidos'] });
         }
 
@@ -168,16 +170,19 @@ class ProductController {
             const productExists = await Product.findOne({ where: { slug } });
 
             if (productExists) { //Confere se o slug ja esta em uso
+                await deleteStoredUploads(collectRequestUploadPaths(req));
                 return res.status(400).json({ error: 'Slug já está em uso' });
             }
 
             const categoryExists = await Category.findByPk(category_id);
 
             if (!categoryExists) { //Confere se a categoria existe
+                await deleteStoredUploads(collectRequestUploadPaths(req));
                 return res.status(400).json({ error: 'Categoria não encontrada' });
             }
 
             if (old_price && Number(old_price) <= Number(price)) { //Confere se o preco antigo e maior que o preco atual
+                await deleteStoredUploads(collectRequestUploadPaths(req));
                 return res.status(400).json({
                     error: 'O preço antigo deve ser maior que o preço atual',
                 });
@@ -187,6 +192,7 @@ class ProductController {
             const path = imagePaths[0];
 
             if (!path) { //Caso nao tenha sido enviada, retorna erro
+                await deleteStoredUploads(collectRequestUploadPaths(req));
                 return res.status(400).json({ error: 'Envie entre 1 e 3 imagens do produto.' });
             }
 
@@ -225,6 +231,7 @@ class ProductController {
             return res.status(201).json(product); //Retorna o produto criado
 
         } catch (error) {
+            await deleteStoredUploads(collectRequestUploadPaths(req));
             if (error.message === 'Número de parcelas inválido. Use entre 1 e 24.' || error.message === 'Cores disponíveis inválidas.') {
                 return res.status(400).json({ error: error.message });
             }
@@ -262,6 +269,7 @@ class ProductController {
         try {
             schema.validateSync(req.body, { abortEarly: false });
         } catch (error) {
+            await deleteStoredUploads(collectRequestUploadPaths(req));
             return res.status(400).json({ error: error.errors || ['Dados do produto inválidos'] });
         }
 
@@ -269,6 +277,7 @@ class ProductController {
             const product = await Product.findByPk(req.params.id);
 
             if (!product) {
+                await deleteStoredUploads(collectRequestUploadPaths(req));
                 return res.status(404).json({ error: 'Produto não encontrado' });
             }
 
@@ -276,16 +285,19 @@ class ProductController {
             const productExists = await Product.findOne({ where: { slug } });
 
             if (productExists && productExists.id !== product.id) {
+                await deleteStoredUploads(collectRequestUploadPaths(req));
                 return res.status(400).json({ error: 'Slug já está em uso' });
             }
 
             const categoryExists = await Category.findByPk(category_id);
 
             if (!categoryExists) {
+                await deleteStoredUploads(collectRequestUploadPaths(req));
                 return res.status(400).json({ error: 'Categoria não encontrada' });
             }
 
             if (old_price && Number(old_price) <= Number(price)) {
+                await deleteStoredUploads(collectRequestUploadPaths(req));
                 return res.status(400).json({
                     error: 'O preço antigo deve ser maior que o preço atual',
                 });
@@ -296,11 +308,14 @@ class ProductController {
             const imagePaths = normalizeImagePaths(req.files);
             const existingImagePaths = normalizeExistingImagePaths(req.body.existing_image_paths, product);
             const combinedImagePaths = [...existingImagePaths, ...imagePaths].slice(0, 3);
+            const staleImagePaths = parseStoredImagePaths(product).filter((item) => !combinedImagePaths.includes(item));
+            const discardedUploadedImages = imagePaths.filter((item) => !combinedImagePaths.includes(item));
             const normalizedPrice = normalizeDecimal(req.body.price);
             const normalizedOldPrice = normalizeDecimal(req.body.old_price);
             const normalizedDiscountPercentage = normalizeInteger(req.body.discount_percentage);
 
             if (combinedImagePaths.length === 0) {
+                await deleteStoredUploads(collectRequestUploadPaths(req));
                 return res.status(400).json({ error: 'Mantenha pelo menos uma imagem do produto.' });
             }
 
@@ -330,8 +345,10 @@ class ProductController {
                 ...installments,
             });
 
+            await deleteStoredUploads([...staleImagePaths, ...discardedUploadedImages]);
             return res.status(200).json(product);
         } catch (error) {
+            await deleteStoredUploads(collectRequestUploadPaths(req));
             if (
                 error.message === 'Número de parcelas inválido. Use entre 1 e 24.'
                 || error.message === 'Cores disponíveis inválidas.'
@@ -351,7 +368,9 @@ class ProductController {
                 return res.status(404).json({ error: 'Produto não encontrado' });
             }
 
+            const imagePaths = parseStoredImagePaths(product);
             await product.destroy();
+            await deleteStoredUploads(imagePaths);
 
             return res.status(204).send();
         } catch (error) {

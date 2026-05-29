@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import errorHandler from './app/middlewares/errorHandler.js';
 import { getAllowedCorsOrigins } from './config/appUrls.js';
+import { UPLOADS_ROOT_DIR } from './utils/uploadStorage.js';
 
 const app = express();
 
@@ -48,7 +49,7 @@ app.use('/uploads', (_req, res, next) => {
     // Imagens de produtos e categorias são públicas e precisam carregar no frontend.
     res.header('Cross-Origin-Resource-Policy', 'cross-origin');
     next();
-}, express.static(resolve('uploads')));
+}, express.static(UPLOADS_ROOT_DIR));
 
 const frontendDistDir = resolve('frontend', 'dist');
 const frontendIndexFile = resolve(frontendDistDir, 'index.html');

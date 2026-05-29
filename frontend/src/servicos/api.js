@@ -1,9 +1,15 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const configuredApiUrl = String(import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
+const browserOrigin = typeof window !== 'undefined' ? window.location.origin : ''
+const API_URL = configuredApiUrl || browserOrigin || 'http://localhost:3000'
+const normalizeImagePath = (caminho) => String(caminho || '')
+  .trim()
+  .replace(/^\/+/, '')
+  .replace(/^uploads\/+/i, '')
 
 export function montarUrlImagem(caminho) {
   if (!caminho) return '/logo-icone-olho.png'
   if (caminho.startsWith('http') || caminho.startsWith('/')) return caminho
-  return `${API_URL}/uploads/${caminho}`
+  return `${API_URL}/uploads/${normalizeImagePath(caminho)}`
 }
 
 export function obterImagensProduto(produto) {

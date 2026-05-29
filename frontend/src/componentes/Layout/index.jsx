@@ -116,8 +116,9 @@ export function Layout() {
           </Link>
 
           <div className="menu-conta">
-            <button className="botao-icone" type="button" aria-label="Conta">
+            <button className="botao-icone botao-conta" type="button" aria-label={usuario ? 'Conta conectada' : 'Conta'}>
               <UserRound size={21} />
+              {usuario && <span className="contador contador-conta">ON</span>}
             </button>
             <div className="conteudo-conta">
               {usuario ? (

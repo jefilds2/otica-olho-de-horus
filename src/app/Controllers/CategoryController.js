@@ -3,8 +3,23 @@ import { literal } from 'sequelize';
 import Category from '../models/Category.js';
 import Product from '../models/Product.js';
 import { sendServerError } from '../../utils/http.js';
+import { collectRequestUploadPaths, deleteStoredUploads, buildStoredUploadPathFromFile, normalizeStoredUploadPath } from '../../utils/uploadStorage.js';
 
 const normalizeText = (value) => value == null ? null : String(value).trim();
+const parseStoredProductImagePaths = (product) => {
+    if (!product) return [];
+
+    try {
+        const parsed = product.image_paths ? JSON.parse(product.image_paths) : null;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map((item) => normalizeStoredUploadPath(item)).filter(Boolean);
+        }
+    } catch {
+        // Mantém compatibilidade com registros antigos.
+    }
+
+    return product.path ? [normalizeStoredUploadPath(product.path)] : [];
+};
 
 class CategoryController {
     async index(req, res) {
@@ -29,6 +44,7 @@ class CategoryController {
         try {
             schema.validateSync(req.body, { abortEarly: false, strict: true });
         } catch (error) {
+            await deleteStoredUploads(collectRequestUploadPaths(req));
             return res.status(400).json({ error: error.errors || ['Dados da categoria inválidos'] });
         }
 
@@ -38,10 +54,11 @@ class CategoryController {
             const categoryExists = await Category.findOne({ where: { slug } });
 
             if (categoryExists) {
+                await deleteStoredUploads(collectRequestUploadPaths(req));
                 return res.status(400).json({ error: 'Slug já está em uso' });
             }
 
-            const path = req.file?.filename;
+            const path = buildStoredUploadPathFromFile(req.file);
 
             const category = await Category.create({
                 ...req.body,
@@ -52,6 +69,7 @@ class CategoryController {
 
             return res.status(201).json(category);
         } catch (error) {
+            await deleteStoredUploads(collectRequestUploadPaths(req));
             return sendServerError(res, 'Erro ao cadastrar categoria', error);
         }
     }
@@ -65,6 +83,7 @@ class CategoryController {
         try {
             schema.validateSync(req.body, { abortEarly: false, strict: true });
         } catch (error) {
+            await deleteStoredUploads(collectRequestUploadPaths(req));
             return res.status(400).json({ error: error.errors || ['Dados da categoria inválidos'] });
         }
 
@@ -72,6 +91,7 @@ class CategoryController {
             const category = await Category.findByPk(req.params.id);
 
             if (!category) {
+                await deleteStoredUploads(collectRequestUploadPaths(req));
                 return res.status(404).json({ error: 'Categoria não encontrada' });
             }
 
@@ -79,17 +99,24 @@ class CategoryController {
             const categoryExists = await Category.findOne({ where: { slug } });
 
             if (categoryExists && categoryExists.id !== category.id) {
+                await deleteStoredUploads(collectRequestUploadPaths(req));
                 return res.status(400).json({ error: 'Slug já está em uso' });
             }
 
+            const nextPath = buildStoredUploadPathFromFile(req.file) || normalizeStoredUploadPath(category.path);
+            const oldPath = normalizeStoredUploadPath(category.path);
             await category.update({
                 name: normalizeText(req.body.name),
                 slug: normalizeText(req.body.slug),
-                path: req.file?.filename || category.path,
+                path: nextPath,
             });
 
+            if (nextPath && oldPath && nextPath !== oldPath) {
+                await deleteStoredUploads([oldPath]);
+            }
             return res.status(200).json(category);
         } catch (error) {
+            await deleteStoredUploads(collectRequestUploadPaths(req));
             return sendServerError(res, 'Erro ao atualizar categoria', error);
         }
     }
@@ -102,13 +129,18 @@ class CategoryController {
                 return res.status(404).json({ error: 'Categoria não encontrada' });
             }
 
-            const linkedProducts = await Product.count({ where: { category_id: category.id } });
+            const linkedProducts = await Product.findAll({ where: { category_id: category.id } });
+            const imagePathsToDelete = [
+                normalizeStoredUploadPath(category.path),
+                ...linkedProducts.flatMap((product) => parseStoredProductImagePaths(product)),
+            ].filter(Boolean);
 
-            if (linkedProducts > 0) {
-                return res.status(400).json({ error: 'Remova ou mova os produtos desta categoria antes de excluí-la' });
+            if (linkedProducts.length > 0) {
+                await Product.destroy({ where: { category_id: category.id } });
             }
 
             await category.destroy();
+            await deleteStoredUploads(imagePathsToDelete);
 
             return res.status(204).send();
         } catch (error) {

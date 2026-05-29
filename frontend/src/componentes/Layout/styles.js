@@ -274,6 +274,25 @@ export const LayoutShell = styled.div`
     text-align: center;
   }
 
+  .botao-conta {
+    position: relative;
+  }
+
+  .contador-conta {
+    top: 1px;
+    right: -7px;
+    min-width: 24px;
+    height: 15px;
+    padding: 0 5px;
+    background: #22c55e;
+    color: #f8fff9;
+    border-color: rgba(255, 255, 255, 0.95);
+    font-size: 9px;
+    line-height: 13px;
+    letter-spacing: 0.08em;
+    box-shadow: 0 4px 10px rgba(34, 197, 94, 0.22);
+  }
+
   .menu-mobile {
     display: none;
   }
