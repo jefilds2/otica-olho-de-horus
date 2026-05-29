@@ -1092,6 +1092,34 @@ export const AdminPage = styled.section`
     table-layout: fixed;
   }
 
+  .tabela-admin .col-pedido-admin {
+    width: 11%;
+  }
+
+  .tabela-admin .col-cliente-admin {
+    width: 31%;
+  }
+
+  .tabela-admin .col-data-admin {
+    width: 10%;
+  }
+
+  .tabela-admin .col-pagamento-admin {
+    width: 25%;
+  }
+
+  .tabela-admin .col-envio-admin {
+    width: 11%;
+  }
+
+  .tabela-admin .col-total-admin {
+    width: 8%;
+  }
+
+  .tabela-admin .col-acoes-admin {
+    width: 17%;
+  }
+
   .tabela-admin th,
   .tabela-admin td {
     border-bottom: 1px solid var(--cor-borda);
@@ -1145,9 +1173,52 @@ export const AdminPage = styled.section`
     min-width: 0;
   }
 
+  .tabela-admin .bloco-pagamento-admin,
+  .tabela-admin .bloco-envio-admin {
+    display: grid;
+    gap: 2px;
+  }
+
+  .tabela-admin .bloco-envio-admin {
+    justify-items: center;
+  }
+
+  .tabela-admin .status-pagamento-admin {
+    color: #16253b;
+    font-size: 15px;
+    line-height: 1.2;
+  }
+
+  .tabela-admin .metodo-pagamento-admin {
+    color: #36506f;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .tabela-admin .detalhe-pagamento-admin {
+    color: #5f7692;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
   .tabela-admin .referencia-pagamento {
+    margin-top: 4px;
+    color: #7a8da8;
+    font-size: 12px;
+    line-height: 1.4;
     overflow-wrap: anywhere;
     word-break: break-word;
+  }
+
+  .tabela-admin .bloco-envio-admin .badge + span {
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  .tabela-admin .coluna-total-admin {
+    font-weight: 800;
+    color: #16253b;
   }
 
   .tabela-admin td em {
@@ -1191,6 +1262,7 @@ export const AdminPage = styled.section`
     padding: 8px 10px;
     font-size: 12px;
     font-weight: 800;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
   }
 
   .botao-acao.editar {
@@ -1206,9 +1278,11 @@ export const AdminPage = styled.section`
   }
 
   .botao-acao.editar:hover {
-    background: #eff6ff;
-    border-color: #bfdbfe;
+    background: #dbeafe;
+    border-color: #93c5fd;
     color: #1d4ed8;
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.14);
+    transform: translateY(-1px);
   }
 
   .botao-acao.excluir:hover {
@@ -1227,6 +1301,8 @@ export const AdminPage = styled.section`
     background: #e0e7ff;
     border-color: #a5b4fc;
     color: #1e40af;
+    box-shadow: 0 10px 20px rgba(99, 102, 241, 0.14);
+    transform: translateY(-1px);
   }
 
   .botao-acao.imprimir {
@@ -1241,16 +1317,34 @@ export const AdminPage = styled.section`
     color: #854d0e;
   }
 
+  .botao-acao.editar.ativo {
+    background: linear-gradient(180deg, #2563eb, #1d4ed8);
+    border-color: #1d4ed8;
+    color: #fff;
+    box-shadow: 0 12px 22px rgba(37, 99, 235, 0.22);
+  }
+
+  .botao-acao.visualizar.ativo {
+    background: linear-gradient(180deg, #4f46e5, #4338ca);
+    border-color: #4338ca;
+    color: #fff;
+    box-shadow: 0 12px 22px rgba(79, 70, 229, 0.22);
+  }
+
   .badge {
     display: inline-flex;
     width: fit-content;
+    align-items: center;
+    justify-content: center;
     border-radius: 999px;
     border: 1px solid var(--cor-borda);
     background: #fff;
     color: var(--cor-texto-suave);
     padding: 4px 8px;
+    text-align: center;
     font-size: 12px;
     font-weight: 800;
+    line-height: 1.2;
   }
 
   .badge.sucesso {

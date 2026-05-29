@@ -111,16 +111,7 @@ function obterResumoPagamento(pedido) {
   const detalhes = pedido?.payment_details
   if (!detalhes) return 'Forma não informada'
 
-  const base = detalhes.method_label || 'Forma não informada'
-  if (detalhes.payment_method_id === 'pix') {
-    return base
-  }
-
-  if (detalhes.installments && detalhes.installments > 1) {
-    return `${base} (${detalhes.installments}x)`
-  }
-
-  return base
+  return detalhes.method_label || 'Forma não informada'
 }
 
 function obterDetalhesPagamentoSecundarios(pedido, moeda) {
@@ -1446,6 +1437,11 @@ export function Admin() {
   }
 
   async function editarPedido(pedido) {
+    if (pedidoEditandoId === pedido.id) {
+      setPedidoEditandoId(null)
+      return
+    }
+
     const pedidosAtualizados = await carregarPedidos()
     const pedidoAtual = pedidosAtualizados.find((item) => item.id === pedido.id) || pedido
 
@@ -1474,9 +1470,15 @@ export function Admin() {
   }
 
   async function abrirDetalhesPedido(pedido) {
+    if (pedidoDetalheAbertoId === pedido.id) {
+      setPedidoDetalheAbertoId(null)
+      return
+    }
+
     const pedidosAtualizados = await carregarPedidos()
     const pedidoAtual = pedidosAtualizados.find((item) => item.id === pedido.id) || pedido
     setPedidoDetalheAbertoId(pedidoAtual.id)
+    setPedidoEditandoId(null)
     document.getElementById('detalhe-pedido-admin')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
@@ -3351,6 +3353,15 @@ export function Admin() {
                 ) : null}
                 <div className="tabela-admin">
                   <table>
+                    <colgroup>
+                      <col className="col-pedido-admin" />
+                      <col className="col-cliente-admin" />
+                      <col className="col-data-admin" />
+                      <col className="col-pagamento-admin" />
+                      <col className="col-envio-admin" />
+                      <col className="col-total-admin" />
+                      <col className="col-acoes-admin" />
+                    </colgroup>
                     <thead><tr><th>Pedido</th><th>Cliente</th><th>Data</th><th>Pagamento</th><th>Envio</th><th>Total</th><th></th></tr></thead>
                     <tbody>
                       {pedidosFiltrados.length > 0 ? pedidosFiltrados.map((pedido) => {
@@ -3371,25 +3382,29 @@ export function Admin() {
                             </td>
                             <td>{formatarData(pedido.paid_at || pedido.created_at)}</td>
                             <td className="coluna-pagamento">
-                              <strong>{statusPagamento.label}</strong>
-                              <span>{resumoPagamento}</span>
-                              {detalhesPagamento.map((linha) => <span key={`${pedido.id}-${linha}`}>{linha}</span>)}
-                              <span className="referencia-pagamento">{pedido.payment_reference}</span>
+                              <div className="bloco-pagamento-admin">
+                                <strong className="status-pagamento-admin">{statusPagamento.label}</strong>
+                                <span className="metodo-pagamento-admin">{resumoPagamento}</span>
+                                {detalhesPagamento.map((linha) => <span className="detalhe-pagamento-admin" key={`${pedido.id}-${linha}`}>{linha}</span>)}
+                                <span className="referencia-pagamento">Ref. {pedido.payment_reference}</span>
+                              </div>
                             </td>
-                            <td>
-                              <span className={statusEnvio.className}>{statusEnvio.label}</span>
-                              <span>{pedido.tracking_code || pedido.shipping_company_name || 'Sem rastreio'}</span>
+                            <td className="coluna-envio-admin">
+                              <div className="bloco-envio-admin">
+                                <span className={statusEnvio.className}>{statusEnvio.label}</span>
+                                <span>{pedido.tracking_code || pedido.shipping_company_name || 'Sem rastreio'}</span>
+                              </div>
                             </td>
-                            <td>{moeda.format(Number(pedido.total_amount || 0))}</td>
+                            <td className="coluna-total-admin">{moeda.format(Number(pedido.total_amount || 0))}</td>
                             <td className="coluna-acoes-pedido">
                               <div className="acoes-tabela acoes-tabela-pedidos">
-                                <button className="botao-acao editar" type="button" onClick={() => editarPedido(pedido)}>
-                                  <Truck size={15} />
-                                  Gerenciar
-                                </button>
-                                <button className="botao-acao visualizar" type="button" onClick={() => abrirDetalhesPedido(pedido)}>
+                                <button className={`botao-acao visualizar ${pedidoDetalheAbertoId === pedido.id ? 'ativo' : ''}`} type="button" onClick={() => abrirDetalhesPedido(pedido)}>
                                   <Eye size={15} />
                                   Detalhes
+                                </button>
+                                <button className={`botao-acao editar ${pedidoEditandoId === pedido.id ? 'ativo' : ''}`} type="button" onClick={() => editarPedido(pedido)}>
+                                  <Truck size={15} />
+                                  Gerenciar
                                 </button>
                                 <button className="botao-acao imprimir" type="button" onClick={() => imprimirResumoEnvio(pedido)}>
                                   <Printer size={15} />
