@@ -1,5 +1,5 @@
 const multer = require("multer");
-const { mkdirSync } = require("node:fs");
+const { existsSync, mkdirSync } = require("node:fs");
 const { extname, resolve } = require("node:path");
 const { v4 } = require("uuid");
 
@@ -15,7 +15,22 @@ const allowedExtensions = new Set([
 ]);
 
 const projectRootDir = resolve(__dirname, "..", "..");
-const uploadsRootDir = resolve(projectRootDir, process.env.UPLOADS_DIR || "uploads");
+const siblingPublicUploadsDir = resolve(projectRootDir, "..", "public_html", "uploads");
+
+function resolveUploadsRootDir() {
+    const configuredDir = String(process.env.UPLOADS_DIR || "").trim();
+    if (configuredDir) {
+        return resolve(projectRootDir, configuredDir);
+    }
+
+    if (existsSync(siblingPublicUploadsDir)) {
+        return siblingPublicUploadsDir;
+    }
+
+    return resolve(projectRootDir, "uploads");
+}
+
+const uploadsRootDir = resolveUploadsRootDir();
 
 function resolveUploadDestination(file) {
     const subdir = file.fieldname === "files" ? "products" : "categories";
