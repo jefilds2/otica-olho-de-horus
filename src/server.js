@@ -5,13 +5,18 @@ import { ensureUploadsStructure } from './utils/uploadStorage.js';
 
 const port = Number(process.env.PORT || 3000);
 
-await ensureUploadsStructure();
+ensureUploadsStructure()
+    .then(() => {
+        const server = app.listen(port, () => console.log(`Server is running on port ${port} 🚀`));
 
-const server = app.listen(port, () => console.log(`Server is running on port ${port} 🚀`));
-
-server.on('error', (error) => {
-    console.error('Failed to start HTTP server', error);
-});
+        server.on('error', (error) => {
+            console.error('Failed to start HTTP server', error);
+        });
+    })
+    .catch((error) => {
+        console.error('Failed to prepare upload directories', error);
+        process.exit(1);
+    });
 
 process.on('unhandledRejection', (error) => {
     console.error('Unhandled promise rejection', error);
