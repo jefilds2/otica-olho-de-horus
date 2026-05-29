@@ -1266,6 +1266,8 @@ export function Admin() {
 
   const pedidosFiltrados = useMemo(() => {
     return pedidos.filter((pedido) => {
+      const termoBusca = String(buscaPedido || '').trim().toLowerCase()
+      const buscaNumerica = /^\d+$/.test(termoBusca)
       const texto = [
         pedido.id,
         pedido.customer_name,
@@ -1274,11 +1276,13 @@ export function Admin() {
         pedido.user?.name,
         pedido.user?.email,
         pedido.shipping_company_name,
-        pedido.tracking_code,
         pedido.payment_reference,
       ].filter(Boolean).join(' ').toLowerCase()
 
-      const bateBusca = texto.includes(buscaPedido.toLowerCase())
+      const bateBusca = !termoBusca
+        || (buscaNumerica
+          ? String(pedido.id) === termoBusca
+          : texto.includes(termoBusca))
 
       const statusEnvioAtual = pedido.fulfillment_status || ''
       const bateStatus = filtroPedidoStatus === 'todos'
@@ -3287,11 +3291,11 @@ export function Admin() {
                 <div className="admin-filtros">
                   <div className="campo-com-icone">
                     <Search size={17} />
-                    <input
-                      value={buscaPedido}
-                      onChange={(e) => setBuscaPedido(e.target.value)}
-                      placeholder="Buscar por pedido, cliente, e-mail, rastreio ou referência do pagamento"
-                    />
+                      <input
+                        value={buscaPedido}
+                        onChange={(e) => setBuscaPedido(e.target.value)}
+                        placeholder="Buscar por pedido, cliente, e-mail ou referência do pagamento"
+                      />
                   </div>
                   <div className="campo-select-admin">
                     <Filter size={17} />
