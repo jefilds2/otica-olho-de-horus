@@ -11,6 +11,14 @@ export function AuthProvider({ children }) {
     return usuarioSalvo ? JSON.parse(usuarioSalvo) : null
   })
 
+  function atualizarUsuario(dados) {
+    setUsuario((atual) => {
+      const proximo = { ...(atual || {}), ...(dados || {}) }
+      localStorage.setItem('usuario_otica', JSON.stringify(proximo))
+      return proximo
+    })
+  }
+
   async function entrar(email, password) {
     try {
       const dados = await criarSessao({ email, password })
@@ -33,7 +41,7 @@ export function AuthProvider({ children }) {
     window.location.assign('/')
   }
 
-  const valor = useMemo(() => ({ usuario, entrar, sair }), [usuario])
+  const valor = useMemo(() => ({ usuario, entrar, sair, atualizarUsuario }), [usuario])
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>
 }

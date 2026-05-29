@@ -36,6 +36,7 @@ routes.post("/coupons/validate", writeRateLimit, CouponController.validate);
 meRoutes.use(authMiddleware);
 meRoutes.get("/", UserController.show);
 meRoutes.put("/", writeRateLimit, UserController.update);
+meRoutes.put("/password", writeRateLimit, UserController.changePassword);
 meRoutes.get("/orders", OrderController.indexMine);
 meRoutes.get("/addresses", AddressController.index);
 meRoutes.post("/addresses", writeRateLimit, AddressController.store);

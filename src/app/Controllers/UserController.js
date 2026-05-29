@@ -215,6 +215,50 @@ class UserController {
         }
     }
 
+    async changePassword(req, res) {
+        const Schema = Yup.object({
+            current_password: Yup.string().required(),
+            new_password: Yup.string().min(6).required(),
+            confirm_password: Yup.string()
+                .oneOf([Yup.ref('new_password')], 'A confirmação da nova senha não confere.')
+                .required(),
+        }).noUnknown(true);
+
+        try {
+            Schema.validateSync(req.body, { abortEarly: false, strict: true });
+        } catch (err) {
+            return res.status(400).json({ error: err.errors });
+        }
+
+        try {
+            const user = await User.findByPk(req.userId);
+
+            if (!user) {
+                return res.status(404).json({ error: 'Usuário não encontrado.' });
+            }
+
+            const senhaAtualCorreta = await bcrypt.compare(req.body.current_password, user.password_hash || '');
+
+            if (!senhaAtualCorreta) {
+                return res.status(400).json({ error: 'A senha atual informada está incorreta.' });
+            }
+
+            const novaSenhaIgualAtual = await bcrypt.compare(req.body.new_password, user.password_hash || '');
+
+            if (novaSenhaIgualAtual) {
+                return res.status(400).json({ error: 'A nova senha deve ser diferente da senha atual.' });
+            }
+
+            const password_hash = await bcrypt.hash(req.body.new_password, 10);
+
+            await user.update({ password_hash });
+
+            return res.status(200).json({ message: 'Senha atualizada com sucesso.' });
+        } catch (error) {
+            return sendServerError(res, 'Erro ao atualizar senha do usuário.', error);
+        }
+    }
+
     async indexAdmin(req, res) {
         try {
             const users = await User.findAll({

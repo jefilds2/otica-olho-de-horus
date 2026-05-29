@@ -2,10 +2,11 @@ import { ClientePage } from './styles'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { ChevronDown, CreditCard, MapPin, Package, Pencil, Plus, ShoppingBag, Trash2, UserRound } from 'lucide-react'
+import { CreditCard, LockKeyhole, MapPin, Package, Pencil, Plus, ShoppingBag, Trash2, UserRound } from 'lucide-react'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { useAuth } from '../../contextos/AuthContext'
 import {
+  alterarMinhaSenha,
   atualizarEndereco,
   atualizarMeuCadastro,
   buscarMeuCadastro,
@@ -32,7 +33,20 @@ const enderecoInicial = {
   is_default: false,
 }
 
+const senhaInicial = {
+  current_password: '',
+  new_password: '',
+  confirm_password: '',
+}
+
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+
+const abasConta = [
+  { id: 'dados', titulo: 'Dados pessoais', descricao: 'Informações usadas para compra, contato e atendimento.', icone: UserRound },
+  { id: 'pedidos', titulo: 'Meus pedidos', descricao: 'Acompanhe status, pagamento e entrega.', icone: Package },
+  { id: 'enderecos', titulo: 'Endereços de entrega', descricao: 'Gerencie seus endereços salvos.', icone: MapPin },
+  { id: 'senha', titulo: 'Alterar senha', descricao: 'Atualize sua senha de acesso.', icone: LockKeyhole },
+]
 
 const statusPedidoMap = {
   aguardando_pagamento: { label: 'Aguardando pagamento', className: 'badge' },
@@ -131,17 +145,16 @@ function obterStatusEnvioPedido(pedido) {
 
 export function Cliente() {
   const navigate = useNavigate()
-  const { usuario } = useAuth()
+  const { usuario, atualizarUsuario } = useAuth()
   const [form, setForm] = useState(null)
   const [enderecos, setEnderecos] = useState([])
   const [pedidos, setPedidos] = useState([])
   const [enderecoForm, setEnderecoForm] = useState(enderecoInicial)
+  const [senhaForm, setSenhaForm] = useState(senhaInicial)
   const [enderecoEditandoId, setEnderecoEditandoId] = useState(null)
   const [mostrarFormularioEndereco, setMostrarFormularioEndereco] = useState(false)
   const [pedidoAbertoId, setPedidoAbertoId] = useState(null)
-  const [secaoDadosAberta, setSecaoDadosAberta] = useState(false)
-  const [secaoPedidosAberta, setSecaoPedidosAberta] = useState(false)
-  const [secaoEnderecosAberta, setSecaoEnderecosAberta] = useState(true)
+  const [abaAtiva, setAbaAtiva] = useState('dados')
   const formularioEnderecoRef = useRef(null)
 
   useEffect(() => {
@@ -174,26 +187,13 @@ export function Cliente() {
   }, [form])
 
   useEffect(() => {
-    if (!secaoEnderecosAberta || !mostrarFormularioEndereco) return
+    if (abaAtiva !== 'enderecos' || !mostrarFormularioEndereco) return
 
     formularioEnderecoRef.current?.scrollIntoView({
       behavior: 'smooth',
       block: 'start',
     })
-  }, [mostrarFormularioEndereco, secaoEnderecosAberta])
-
-  useEffect(() => {
-    if (!form || enderecos.length > 0) return
-
-    setSecaoEnderecosAberta(true)
-    setMostrarFormularioEndereco(true)
-    setEnderecoEditandoId(null)
-    setEnderecoForm({
-      ...enderecoInicial,
-      recipient_name: form.name || '',
-      phone: formatarTelefone(form.phone || form.whatsapp || ''),
-    })
-  }, [enderecos.length, form])
+  }, [abaAtiva, mostrarFormularioEndereco])
 
   const resumo = useMemo(() => ({
     pedidos: pedidos.length,
@@ -239,7 +239,7 @@ export function Cliente() {
   }
 
   function abrirNovoEndereco() {
-    setSecaoEnderecosAberta(true)
+    setAbaAtiva('enderecos')
     setEnderecoEditandoId(null)
     setEnderecoForm({
       ...enderecoInicial,
@@ -260,7 +260,26 @@ export function Cliente() {
         whatsapp: form.whatsapp || '',
       })
       setForm(atualizado)
+      atualizarUsuario({
+        name: atualizado.name,
+        email: atualizado.email,
+      })
       toast.success('Cadastro atualizado.')
+    } catch (error) {
+      toast.error(obterMensagemErroUsuario(error))
+    }
+  }
+
+  function alterarSenhaCampo(campo, valor) {
+    setSenhaForm((atual) => ({ ...atual, [campo]: valor }))
+  }
+
+  async function salvarSenha(evento) {
+    evento.preventDefault()
+    try {
+      await alterarMinhaSenha(senhaForm)
+      setSenhaForm(senhaInicial)
+      toast.success('Senha atualizada com sucesso.')
     } catch (error) {
       toast.error(obterMensagemErroUsuario(error))
     }
@@ -408,40 +427,69 @@ export function Cliente() {
         </article>
       </div>
 
-      <div className="painel-grid">
-        <section className="painel-card painel-card-dados">
-          <button className={`botao-secao ${secaoDadosAberta ? 'aberto' : ''}`} type="button" onClick={() => setSecaoDadosAberta((atual) => !atual)}>
-            <div>
-              <h2>Dados pessoais</h2>
-              <p>Informações usadas para compra, contato e atendimento.</p>
-            </div>
-            <ChevronDown size={18} />
-          </button>
+      <div className="conta-layout">
+        <aside className="conta-menu">
+          <div className="conta-menu-topo">
+            <span className="conta-menu-etiqueta">Navegação</span>
+            <strong>Minha conta</strong>
+            <p>Escolha uma área para gerenciar seus dados.</p>
+          </div>
 
-          {secaoDadosAberta ? (
-            <form className="form-grid conteudo-secao" onSubmit={salvar}>
-              <label>Nome<input value={form.name || ''} onChange={(e) => alterarCampo('name', e.target.value)} /></label>
-              <label>E-mail<input type="email" value={form.email || ''} onChange={(e) => alterarCampo('email', e.target.value)} /></label>
-              <label>Data de nascimento<input type="date" value={form.birth_date || ''} onChange={(e) => alterarCampo('birth_date', e.target.value)} /></label>
-              <label>Telefone<input value={form.phone || ''} onChange={(e) => alterarCampo('phone', e.target.value)} /></label>
-              <label>WhatsApp<input value={form.whatsapp || ''} onChange={(e) => alterarCampo('whatsapp', e.target.value)} /></label>
-              <button className="botao destaque" type="submit">Salvar dados</button>
-            </form>
+          <nav className="conta-menu-lista" aria-label="Seções da conta">
+            {abasConta.map((aba) => {
+              const Icone = aba.icone
+              const ativa = abaAtiva === aba.id
+
+              return (
+                <button
+                  key={aba.id}
+                  className={`conta-menu-botao ${ativa ? 'ativo' : ''}`}
+                  type="button"
+                  onClick={() => setAbaAtiva(aba.id)}
+                >
+                  <span className="conta-menu-icone"><Icone size={18} /></span>
+                  <span>
+                    <strong>{aba.titulo}</strong>
+                    <small>{aba.descricao}</small>
+                  </span>
+                </button>
+              )
+            })}
+          </nav>
+        </aside>
+
+        <div className={`conta-painel aba-${abaAtiva}`}>
+          {abaAtiva === 'dados' ? (
+            <section className="painel-card painel-card-dados conta-conteudo">
+              <div className="painel-card-topo">
+                <div>
+                  <h2>Dados pessoais</h2>
+                  <p>Informações usadas para compra, contato e atendimento.</p>
+                </div>
+              </div>
+
+              <form className="form-grid conteudo-secao" onSubmit={salvar}>
+                <label>Nome<input value={form.name || ''} onChange={(e) => alterarCampo('name', e.target.value)} /></label>
+                <label>E-mail<input type="email" value={form.email || ''} onChange={(e) => alterarCampo('email', e.target.value)} /></label>
+                <label>Data de nascimento<input type="date" value={form.birth_date || ''} onChange={(e) => alterarCampo('birth_date', e.target.value)} /></label>
+                <label>Telefone<input value={form.phone || ''} onChange={(e) => alterarCampo('phone', e.target.value)} /></label>
+                <label>WhatsApp<input value={form.whatsapp || ''} onChange={(e) => alterarCampo('whatsapp', e.target.value)} /></label>
+                <button className="botao destaque" type="submit">Salvar dados</button>
+              </form>
+            </section>
           ) : null}
-        </section>
 
-        <section className="painel-card painel-card-pedidos">
-          <button className={`botao-secao ${secaoPedidosAberta ? 'aberto' : ''}`} type="button" onClick={() => setSecaoPedidosAberta((atual) => !atual)}>
-            <div>
-              <h2>Meus pedidos</h2>
-              <p>Acompanhe o status da compra, entrega e pagamento.</p>
-            </div>
-            <ChevronDown size={18} />
-          </button>
+          {abaAtiva === 'pedidos' ? (
+            <section className="painel-card painel-card-pedidos conta-conteudo">
+              <div className="painel-card-topo">
+                <div>
+                  <h2>Meus pedidos</h2>
+                  <p>Acompanhe o status da compra, entrega e pagamento.</p>
+                </div>
+              </div>
 
-          {secaoPedidosAberta ? (
-            pedidos.length > 0 ? (
-              <div className="lista-pedidos conteudo-secao">
+              {pedidos.length > 0 ? (
+                <div className="lista-pedidos conteudo-secao">
                 {pedidos.map((pedido) => {
                   const statusPedido = statusPedidoMap[pedido.status] || { label: pedido.status, className: 'badge' }
                   const statusEnvio = obterStatusEnvioPedido(pedido)
@@ -471,7 +519,7 @@ export function Cliente() {
                         onClick={() => setPedidoAbertoId((atual) => (atual === pedido.id ? null : pedido.id))}
                       >
                         <span>{pedidoAberto ? 'Ocultar detalhes' : 'Ver detalhes do pedido'}</span>
-                        <ChevronDown size={16} />
+                        <span className="indicador-detalhe">{pedidoAberto ? '−' : '+'}</span>
                       </button>
 
                       {pedidoAberto ? (
@@ -545,130 +593,152 @@ export function Cliente() {
                     </article>
                   )
                 })}
-              </div>
-            ) : (
-              <div className="conteudo-secao">
-                <EstadoVazio
-                  titulo="Nenhum pedido realizado"
-                  texto="Quando você finalizar uma compra, seus pedidos aparecerão aqui."
-                  acao={<Link className="botao" to="/produtos">Explorar produtos</Link>}
-                />
-              </div>
-            )
-          ) : null}
-        </section>
-      </div>
-
-      <section className="painel-card bloco-enderecos painel-card-enderecos">
-        <button className={`botao-secao ${secaoEnderecosAberta ? 'aberto' : ''}`} type="button" onClick={() => setSecaoEnderecosAberta((atual) => !atual)}>
-          <div>
-            <h2>Endereços de entrega</h2>
-            <p>Cadastre quantos endereços quiser e defina um padrão para o checkout.</p>
-          </div>
-          <ChevronDown size={18} />
-        </button>
-
-        {secaoEnderecosAberta ? (
-          <div className="enderecos-grid conteudo-secao">
-            <div className="lista-enderecos">
-              {enderecos.length > 0 ? enderecos.map((endereco) => (
-                <article className={`card-endereco ${endereco.is_default ? 'padrao' : ''}`} key={endereco.id}>
-                  <div className="card-endereco-topo">
-                    <div>
-                      <strong>{endereco.label}</strong>
-                      <span>{endereco.is_default ? 'Endereço padrão' : 'Endereço salvo'}</span>
-                    </div>
-                    <MapPin size={18} />
-                  </div>
-                  <p>{endereco.recipient_name}</p>
-                  <p>{endereco.street}, {endereco.number}{endereco.complement ? ` • ${endereco.complement}` : ''}</p>
-                  <p>{endereco.neighborhood} • {endereco.city}/{endereco.state}</p>
-                  <p>CEP {endereco.cep}</p>
-                  {endereco.reference && <p>Referência: {endereco.reference}</p>}
-                  <div className="acoes-endereco">
-                    <button className="botao-acao destaque-checkout" type="button" onClick={() => usarNoCheckout(endereco)}>
-                      Usar no checkout
-                    </button>
-                    <button className="botao-acao editar" type="button" onClick={() => editarEndereco(endereco)}>
-                      <Pencil size={15} />
-                      Editar
-                    </button>
-                    <button className="botao-acao excluir" type="button" onClick={() => removerEndereco(endereco.id)}>
-                      <Trash2 size={15} />
-                      Excluir
-                    </button>
-                  </div>
-                </article>
-              )) : (
-                <EstadoVazio
-                  titulo="Nenhum endereço salvo"
-                  texto="Cadastre um endereço abaixo para liberar cálculo de frete e checkout."
-                />
-              )}
-            </div>
-
-            <div className="bloco-form-endereco">
-              <div className={`chamada-endereco ${mostrarFormularioEndereco ? 'ativa' : ''}`}>
-                <div>
-                  <span className="chamada-endereco-etiqueta">Próximo passo</span>
-                  <strong>Cadastre um novo endereço de entrega</strong>
-                  <p>Use este formulário para salvar um endereço e liberar o frete no checkout sem ficar procurando onde preencher.</p>
                 </div>
-                {!mostrarFormularioEndereco ? (
-                  <button className="botao destaque" type="button" onClick={abrirNovoEndereco}>
-                    <Plus size={16} />
-                    Cadastrar endereço agora
-                  </button>
-                ) : null}
+              ) : (
+                <div className="conteudo-secao">
+                  <EstadoVazio
+                    titulo="Nenhum pedido realizado"
+                    texto="Quando você finalizar uma compra, seus pedidos aparecerão aqui."
+                    acao={<Link className="botao" to="/produtos">Explorar produtos</Link>}
+                  />
+                </div>
+              )}
+            </section>
+          ) : null}
+
+          {abaAtiva === 'enderecos' ? (
+            <section className="painel-card painel-card-enderecos conta-conteudo">
+              <div className="painel-card-topo">
+                <div>
+                  <h2>Endereços de entrega</h2>
+                  <p>Cadastre quantos endereços quiser e defina um padrão para o checkout.</p>
+                </div>
               </div>
 
-              {mostrarFormularioEndereco ? (
-                <form className="form-grid form-endereco" onSubmit={salvarEndereco} ref={formularioEnderecoRef}>
-                  <div className="form-endereco-topo">
-                    <h3>{enderecoEditandoId ? 'Editar endereço' : 'Novo endereço'}</h3>
-                    <div className="acoes-form-endereco">
-                      <button className="botao secundario" type="button" onClick={() => {
-                        setEnderecoEditandoId(null)
-                        setEnderecoForm({
-                          ...enderecoInicial,
-                          recipient_name: form.name || '',
-                          phone: formatarTelefone(form.phone || form.whatsapp || ''),
-                        })
-                      }}>
-                        <Plus size={16} />
-                        Limpar
-                      </button>
-                      <button
-                        className="botao secundario"
-                        type="button"
-                        onClick={() => setMostrarFormularioEndereco(false)}
-                      >
-                        Ocultar formulário
-                      </button>
+              <div className="enderecos-grid conteudo-secao">
+                <div className="lista-enderecos">
+                  {enderecos.length > 0 ? enderecos.map((endereco) => (
+                    <article className={`card-endereco ${endereco.is_default ? 'padrao' : ''}`} key={endereco.id}>
+                      <div className="card-endereco-topo">
+                        <div>
+                          <strong>{endereco.label}</strong>
+                          <span>{endereco.is_default ? 'Endereço padrão' : 'Endereço salvo'}</span>
+                        </div>
+                        <MapPin size={18} />
+                      </div>
+                      <p>{endereco.recipient_name}</p>
+                      <p>{endereco.street}, {endereco.number}{endereco.complement ? ` • ${endereco.complement}` : ''}</p>
+                      <p>{endereco.neighborhood} • {endereco.city}/{endereco.state}</p>
+                      <p>CEP {endereco.cep}</p>
+                      {endereco.reference && <p>Referência: {endereco.reference}</p>}
+                      <div className="acoes-endereco">
+                        <button className="botao-acao destaque-checkout" type="button" onClick={() => usarNoCheckout(endereco)}>
+                          Usar no checkout
+                        </button>
+                        <button className="botao-acao editar" type="button" onClick={() => editarEndereco(endereco)}>
+                          <Pencil size={15} />
+                          Editar
+                        </button>
+                        <button className="botao-acao excluir" type="button" onClick={() => removerEndereco(endereco.id)}>
+                          <Trash2 size={15} />
+                          Excluir
+                        </button>
+                      </div>
+                    </article>
+                  )) : (
+                    <EstadoVazio
+                      titulo="Nenhum endereço salvo"
+                      texto="Cadastre um endereço abaixo para liberar cálculo de frete e checkout."
+                    />
+                  )}
+                </div>
+
+                <div className="bloco-form-endereco">
+                  <div className={`chamada-endereco ${mostrarFormularioEndereco ? 'ativa' : ''}`}>
+                    <div>
+                      <span className="chamada-endereco-etiqueta">Próximo passo</span>
+                      <strong>Cadastre um novo endereço de entrega</strong>
+                      <p>Use este formulário para salvar um endereço e liberar o frete no checkout sem ficar procurando onde preencher.</p>
                     </div>
+                    {!mostrarFormularioEndereco ? (
+                      <button className="botao destaque" type="button" onClick={abrirNovoEndereco}>
+                        <Plus size={16} />
+                        Cadastrar endereço agora
+                      </button>
+                    ) : null}
                   </div>
-                  <label>Identificação<input value={enderecoForm.label} onChange={(e) => alterarEndereco('label', e.target.value)} placeholder="Casa, trabalho, consultório..." required /></label>
-                  <label>Destinatário<input value={enderecoForm.recipient_name} onChange={(e) => alterarEndereco('recipient_name', e.target.value)} required /></label>
-                  <label>Telefone<input value={enderecoForm.phone} onChange={(e) => alterarEndereco('phone', e.target.value)} placeholder="(00) 00000-0000" /></label>
-                  <label>CEP<input value={enderecoForm.cep} onChange={(e) => alterarEndereco('cep', e.target.value)} placeholder="00000-000" required /></label>
-                  <label>Rua<input value={enderecoForm.street} onChange={(e) => alterarEndereco('street', e.target.value)} required /></label>
-                  <label>Número<input value={enderecoForm.number} onChange={(e) => alterarEndereco('number', e.target.value)} required /></label>
-                  <label>Complemento<input value={enderecoForm.complement} onChange={(e) => alterarEndereco('complement', e.target.value)} /></label>
-                  <label>Bairro<input value={enderecoForm.neighborhood} onChange={(e) => alterarEndereco('neighborhood', e.target.value)} required /></label>
-                  <label>Cidade<input value={enderecoForm.city} onChange={(e) => alterarEndereco('city', e.target.value)} required /></label>
-                  <label>UF<input maxLength={2} value={enderecoForm.state} onChange={(e) => alterarEndereco('state', e.target.value.toUpperCase())} required /></label>
-                  <label>Referência<input value={enderecoForm.reference} onChange={(e) => alterarEndereco('reference', e.target.value)} /></label>
-                  <label className="checkbox-endereco">
-                    <input type="checkbox" checked={enderecoForm.is_default} onChange={(e) => alterarEndereco('is_default', e.target.checked)} />
-                    <span>Definir como endereço padrão</span>
-                  </label>
-                  <button className="botao destaque" type="submit">{enderecoEditandoId ? 'Salvar endereço' : 'Cadastrar endereço'}</button>
-                </form>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
-      </section>
+
+                  {mostrarFormularioEndereco ? (
+                    <form className="form-grid form-endereco" onSubmit={salvarEndereco} ref={formularioEnderecoRef}>
+                      <div className="form-endereco-topo">
+                        <h3>{enderecoEditandoId ? 'Editar endereço' : 'Novo endereço'}</h3>
+                        <div className="acoes-form-endereco">
+                          <button className="botao secundario" type="button" onClick={() => {
+                            setEnderecoEditandoId(null)
+                            setEnderecoForm({
+                              ...enderecoInicial,
+                              recipient_name: form.name || '',
+                              phone: formatarTelefone(form.phone || form.whatsapp || ''),
+                            })
+                          }}>
+                            <Plus size={16} />
+                            Limpar
+                          </button>
+                          <button
+                            className="botao secundario"
+                            type="button"
+                            onClick={() => setMostrarFormularioEndereco(false)}
+                          >
+                            Ocultar formulário
+                          </button>
+                        </div>
+                      </div>
+                      <label>Identificação<input value={enderecoForm.label} onChange={(e) => alterarEndereco('label', e.target.value)} placeholder="Casa, trabalho, consultório..." required /></label>
+                      <label>Destinatário<input value={enderecoForm.recipient_name} onChange={(e) => alterarEndereco('recipient_name', e.target.value)} required /></label>
+                      <label>Telefone<input value={enderecoForm.phone} onChange={(e) => alterarEndereco('phone', e.target.value)} placeholder="(00) 00000-0000" /></label>
+                      <label>CEP<input value={enderecoForm.cep} onChange={(e) => alterarEndereco('cep', e.target.value)} placeholder="00000-000" required /></label>
+                      <label>Rua<input value={enderecoForm.street} onChange={(e) => alterarEndereco('street', e.target.value)} required /></label>
+                      <label>Número<input value={enderecoForm.number} onChange={(e) => alterarEndereco('number', e.target.value)} required /></label>
+                      <label>Complemento<input value={enderecoForm.complement} onChange={(e) => alterarEndereco('complement', e.target.value)} /></label>
+                      <label>Bairro<input value={enderecoForm.neighborhood} onChange={(e) => alterarEndereco('neighborhood', e.target.value)} required /></label>
+                      <label>Cidade<input value={enderecoForm.city} onChange={(e) => alterarEndereco('city', e.target.value)} required /></label>
+                      <label>UF<input maxLength={2} value={enderecoForm.state} onChange={(e) => alterarEndereco('state', e.target.value.toUpperCase())} required /></label>
+                      <label>Referência<input value={enderecoForm.reference} onChange={(e) => alterarEndereco('reference', e.target.value)} /></label>
+                      <label className="checkbox-endereco">
+                        <input type="checkbox" checked={enderecoForm.is_default} onChange={(e) => alterarEndereco('is_default', e.target.checked)} />
+                        <span>Definir como endereço padrão</span>
+                      </label>
+                      <button className="botao destaque" type="submit">{enderecoEditandoId ? 'Salvar endereço' : 'Cadastrar endereço'}</button>
+                    </form>
+                  ) : null}
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          {abaAtiva === 'senha' ? (
+            <section className="painel-card painel-card-senha conta-conteudo">
+              <div className="painel-card-topo">
+                <div>
+                  <h2>Alterar senha</h2>
+                  <p>Atualize sua senha de acesso para manter sua conta protegida.</p>
+                </div>
+              </div>
+
+              <form className="form-grid conteudo-secao form-senha" onSubmit={salvarSenha}>
+                <label>Senha atual<input type="password" value={senhaForm.current_password} onChange={(e) => alterarSenhaCampo('current_password', e.target.value)} required /></label>
+                <label>Nova senha<input type="password" value={senhaForm.new_password} onChange={(e) => alterarSenhaCampo('new_password', e.target.value)} minLength={6} required /></label>
+                <label>Confirmar nova senha<input type="password" value={senhaForm.confirm_password} onChange={(e) => alterarSenhaCampo('confirm_password', e.target.value)} minLength={6} required /></label>
+                <div className="senha-dicas">
+                  <strong>Recomendação</strong>
+                  <p>Use pelo menos 6 caracteres e evite repetir a senha atual.</p>
+                </div>
+                <button className="botao destaque" type="submit">Salvar nova senha</button>
+              </form>
+            </section>
+          ) : null}
+        </div>
+      </div>
 
       <div className="aviso">
         <strong>Finalização da compra:</strong> antes de pagar, selecione um endereço no carrinho para calcular o frete pelos Correios e então seguir para o pagamento.

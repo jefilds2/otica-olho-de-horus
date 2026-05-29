@@ -110,6 +110,133 @@ export const ClientePage = styled.section`
     align-items: start;
   }
 
+  .conta-layout {
+    display: grid;
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+    gap: 24px;
+    margin-top: 26px;
+    align-items: start;
+  }
+
+  .conta-menu {
+    position: sticky;
+    top: 24px;
+    display: grid;
+    gap: 18px;
+    padding: 22px;
+    border: 1px solid rgba(47, 94, 164, 0.14);
+    border-radius: 20px;
+    background:
+      radial-gradient(circle at top right, rgba(51, 168, 177, 0.14), transparent 32%),
+      linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.05);
+  }
+
+  .conta-menu-topo strong {
+    display: block;
+    margin-top: 10px;
+    color: #173966;
+    font-size: 24px;
+  }
+
+  .conta-menu-topo p {
+    margin: 8px 0 0;
+    color: var(--cor-texto-suave);
+    line-height: 1.6;
+  }
+
+  .conta-menu-etiqueta {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: rgba(47, 94, 164, 0.1);
+    color: #244b82;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .conta-menu-lista {
+    display: grid;
+    gap: 10px;
+  }
+
+  .conta-menu-botao {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: start;
+    gap: 14px;
+    width: 100%;
+    padding: 14px;
+    border: 1px solid rgba(47, 94, 164, 0.1);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.76);
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .conta-menu-botao:hover {
+    transform: translateY(-1px);
+    border-color: rgba(47, 94, 164, 0.2);
+    box-shadow: 0 14px 28px rgba(47, 94, 164, 0.08);
+    background: #fff;
+  }
+
+  .conta-menu-botao.ativo {
+    border-color: rgba(47, 94, 164, 0.24);
+    background: linear-gradient(135deg, #173966 0%, #214d86 100%);
+    box-shadow: 0 18px 32px rgba(23, 57, 102, 0.22);
+  }
+
+  .conta-menu-botao strong,
+  .conta-menu-botao small {
+    display: block;
+  }
+
+  .conta-menu-botao strong {
+    color: #173966;
+    font-size: 15px;
+  }
+
+  .conta-menu-botao small {
+    margin-top: 4px;
+    color: var(--cor-texto-suave);
+    line-height: 1.45;
+  }
+
+  .conta-menu-botao.ativo strong,
+  .conta-menu-botao.ativo small {
+    color: #fff;
+  }
+
+  .conta-menu-icone {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: rgba(47, 94, 164, 0.08);
+    color: #244b82;
+  }
+
+  .conta-menu-botao.ativo .conta-menu-icone {
+    background: rgba(255, 255, 255, 0.14);
+    color: #7ae1ea;
+  }
+
+  .conta-painel {
+    min-width: 0;
+  }
+
+  .conta-conteudo {
+    min-width: 0;
+  }
+
   .painel-card {
     border: 1px solid var(--cor-borda);
     border-radius: 20px;
@@ -139,6 +266,13 @@ export const ClientePage = styled.section`
       var(--cor-card);
   }
 
+  .painel-card-senha {
+    border-color: rgba(93, 63, 211, 0.18);
+    background:
+      linear-gradient(180deg, rgba(247, 245, 255, 0.94) 0%, rgba(255, 255, 255, 0.98) 20%),
+      var(--cor-card);
+  }
+
   .painel-card-dados .botao-secao h2 {
     color: #173966;
   }
@@ -149,6 +283,10 @@ export const ClientePage = styled.section`
 
   .painel-card-enderecos .botao-secao h2 {
     color: #155d63;
+  }
+
+  .painel-card-senha h2 {
+    color: #34206f;
   }
 
   .painel-card-dados .botao-secao svg {
@@ -352,6 +490,20 @@ export const ClientePage = styled.section`
     transform: rotate(180deg);
   }
 
+  .indicador-detalhe {
+    min-width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(47, 94, 164, 0.08);
+    color: #244b82;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
   .botao-detalhe-pedido:hover {
     border-color: rgba(47, 94, 164, 0.28);
     background: #f8fbff;
@@ -537,6 +689,32 @@ export const ClientePage = styled.section`
 
   .bloco-enderecos {
     margin-top: 36px;
+  }
+
+  .form-senha {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .senha-dicas,
+  .form-senha .botao.destaque {
+    grid-column: 1 / -1;
+  }
+
+  .senha-dicas {
+    padding: 18px 20px;
+    border: 1px solid rgba(93, 63, 211, 0.14);
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(247, 245, 255, 0.9) 0%, #ffffff 100%);
+  }
+
+  .senha-dicas strong {
+    display: block;
+    color: #34206f;
+  }
+
+  .senha-dicas p {
+    margin: 8px 0 0;
+    color: var(--cor-texto-suave);
   }
 
   .titulo-secao {
@@ -817,12 +995,17 @@ export const ClientePage = styled.section`
   @media (max-width: 1080px) {
     .cliente-resumo,
     .painel-grid,
-    .enderecos-grid {
+    .enderecos-grid,
+    .conta-layout {
       grid-template-columns: 1fr;
     }
 
     .cliente-avatar {
       min-width: 0;
+    }
+
+    .conta-menu {
+      position: static;
     }
 
     .lista-pedidos {
@@ -843,9 +1026,14 @@ export const ClientePage = styled.section`
       align-items: stretch;
     }
 
+    .conta-menu-botao {
+      grid-template-columns: 1fr;
+    }
+
     .cliente-resumo,
     .pedido-metricas,
-    .form-grid {
+    .form-grid,
+    .form-senha {
       grid-template-columns: 1fr 1fr;
     }
 
@@ -869,6 +1057,7 @@ export const ClientePage = styled.section`
   @media (max-width: 640px) {
     .form-grid,
     .form-endereco,
+    .form-senha,
     .cliente-resumo,
     .pedido-metricas,
     .enderecos-grid {
@@ -876,6 +1065,7 @@ export const ClientePage = styled.section`
     }
 
     .cliente-hero,
+    .conta-menu,
     .painel-card,
     .card-endereco,
     .form-endereco {

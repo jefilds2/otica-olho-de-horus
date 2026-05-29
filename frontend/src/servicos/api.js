@@ -168,6 +168,13 @@ export async function atualizarMeuCadastro(dados) {
   })
 }
 
+export async function alterarMinhaSenha(dados) {
+  return apiFetch('/me/password', {
+    method: 'PUT',
+    body: JSON.stringify(dados),
+  })
+}
+
 export async function listarMeusEnderecos() {
   return apiFetch('/me/addresses')
 }
