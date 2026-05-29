@@ -1172,9 +1172,16 @@ export const AdminPage = styled.section`
     justify-content: flex-end;
   }
 
+  .acoes-tabela-pedidos {
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 132px;
+  }
+
   .botao-acao {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
@@ -1208,6 +1215,30 @@ export const AdminPage = styled.section`
     background: #fef2f2;
     border-color: #fecaca;
     color: #b91c1c;
+  }
+
+  .botao-acao.visualizar {
+    border-color: #c7d2fe;
+    background: #eef2ff;
+    color: #1d4ed8;
+  }
+
+  .botao-acao.visualizar:hover {
+    background: #e0e7ff;
+    border-color: #a5b4fc;
+    color: #1e40af;
+  }
+
+  .botao-acao.imprimir {
+    border-color: #fde68a;
+    background: linear-gradient(180deg, #fff7d6, #fef3c7);
+    color: #9a6700;
+  }
+
+  .botao-acao.imprimir:hover {
+    background: linear-gradient(180deg, #fef3c7, #fde68a);
+    border-color: #facc15;
+    color: #854d0e;
   }
 
   .badge {
@@ -2083,6 +2114,11 @@ export const AdminPage = styled.section`
   .detalhe-pedido-admin-linhas p:last-child {
     padding-bottom: 0;
     border-bottom: 0;
+  }
+
+  .coluna-acoes-pedido {
+    width: 1%;
+    white-space: nowrap;
   }
 
   .detalhe-pedido-admin-linhas span,

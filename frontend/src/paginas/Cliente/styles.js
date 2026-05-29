@@ -310,6 +310,13 @@ export const ClientePage = styled.section`
     font-size: 15px;
   }
 
+  .pedido-metricas small {
+    color: #244b82;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
   .pedido-itens {
     display: grid;
     gap: 6px;

@@ -84,6 +84,82 @@ function parseJsonField(value) {
     }
 }
 
+function normalizeMercadoPagoPaymentValue(value) {
+    return value == null || value === '' ? null : String(value).trim();
+}
+
+function mapMercadoPagoPaymentMethodLabel({ methodId, paymentTypeId, installments }) {
+    const normalizedMethodId = String(methodId || '').trim().toLowerCase();
+    const normalizedPaymentTypeId = String(paymentTypeId || '').trim().toLowerCase();
+    const normalizedInstallments = Number(installments || 0);
+
+    if (normalizedMethodId === 'pix') {
+        return 'PIX';
+    }
+
+    if (normalizedPaymentTypeId === 'credit_card') {
+        return normalizedInstallments > 1
+            ? `Cartão de crédito em ${normalizedInstallments}x`
+            : 'Cartão de crédito';
+    }
+
+    if (normalizedPaymentTypeId === 'debit_card') {
+        return 'Cartão de débito';
+    }
+
+    if (normalizedPaymentTypeId === 'bank_transfer') {
+        return normalizedMethodId === 'pix' ? 'PIX' : 'Transferência bancária';
+    }
+
+    if (normalizedPaymentTypeId === 'ticket') {
+        return 'Boleto';
+    }
+
+    if (normalizedPaymentTypeId === 'account_money') {
+        return 'Saldo Mercado Pago';
+    }
+
+    return normalizedMethodId || normalizedPaymentTypeId || null;
+}
+
+function extractMercadoPagoPaymentDetails(payment) {
+    if (!payment || typeof payment !== 'object') {
+        return null;
+    }
+
+    const methodId = normalizeMercadoPagoPaymentValue(payment.payment_method_id)?.toLowerCase() || null;
+    const paymentTypeId = normalizeMercadoPagoPaymentValue(payment.payment_type_id)?.toLowerCase() || null;
+    const installments = Number(payment.installments || 0);
+    const normalizedInstallments = Number.isInteger(installments) && installments > 0 ? installments : null;
+    const installmentAmount = payment?.transaction_details?.installment_amount == null
+        ? null
+        : formatDecimalValue(payment.transaction_details.installment_amount);
+    const totalPaidAmount = payment?.transaction_details?.total_paid_amount == null
+        ? null
+        : formatDecimalValue(payment.transaction_details.total_paid_amount);
+    const lastFourDigits = normalizeMercadoPagoPaymentValue(payment?.card?.last_four_digits) || null;
+    const issuerName = normalizeMercadoPagoPaymentValue(payment?.issuer?.name) || null;
+
+    return {
+        payment_id: payment?.id ? String(payment.id) : null,
+        payment_method_id: methodId,
+        payment_type_id: paymentTypeId,
+        method_label: mapMercadoPagoPaymentMethodLabel({
+            methodId,
+            paymentTypeId,
+            installments: normalizedInstallments,
+        }),
+        installments: normalizedInstallments,
+        installment_amount: installmentAmount,
+        total_paid_amount: totalPaidAmount,
+        currency_id: normalizeMercadoPagoPaymentValue(payment.currency_id)?.toLowerCase() || 'brl',
+        status: normalizeMercadoPagoPaymentValue(payment.status)?.toLowerCase() || null,
+        status_detail: normalizeMercadoPagoPaymentValue(payment.status_detail)?.toLowerCase() || null,
+        issuer_name: issuerName,
+        card_last_four_digits: lastFourDigits,
+    };
+}
+
 function mergeMelhorEnvioPayload(order, patch) {
     return {
         ...(parseJsonField(order.melhor_envio_payload_json) || {}),
@@ -310,6 +386,7 @@ function formatOrder(order) {
         user_id: order.user_id,
         payment_reference: order.payment_reference,
         payment_transaction_id: order.payment_transaction_id,
+        payment_details: parseJsonField(order.payment_details_json),
         customer_name: order.customer_name,
         customer_email: order.customer_email,
         customer_phone: order.customer_phone,
@@ -360,6 +437,37 @@ function formatOrder(order) {
             total_price: Number(item.total_price),
         })) : [],
     };
+}
+
+async function hydrateMissingMercadoPagoPaymentDetails(orders = []) {
+    const candidates = orders.filter((order) => (
+        order?.payment_transaction_id
+        && !order?.payment_details_json
+    ));
+
+    if (candidates.length === 0) {
+        return orders;
+    }
+
+    await Promise.all(candidates.map(async (order) => {
+        try {
+            const payment = await getMercadoPagoPayment(order.payment_transaction_id);
+            const paymentDetails = extractMercadoPagoPaymentDetails(payment);
+
+            if (!paymentDetails) {
+                return;
+            }
+
+            order.payment_details_json = JSON.stringify(paymentDetails);
+            await order.update({
+                payment_details_json: order.payment_details_json,
+            });
+        } catch (error) {
+            console.error(`Falha ao sincronizar detalhes de pagamento do pedido ${order.id}`, error);
+        }
+    }));
+
+    return orders;
 }
 
 async function syncOrderTrackingFromMelhorEnvio(order, storeSettings) {
@@ -415,6 +523,7 @@ async function syncOrderWithMercadoPagoPayment({ order, payment, transaction }) 
     const willBePaid = nextStatus === 'pago';
     const updatedFields = {
         payment_transaction_id: payment?.id ? String(payment.id) : order.payment_transaction_id,
+        payment_details_json: JSON.stringify(extractMercadoPagoPaymentDetails(payment)),
         customer_email: payer.email || order.customer_email,
         customer_name: order.customer_name,
         customer_phone: phoneNumber || order.customer_phone,
@@ -471,6 +580,7 @@ class OrderController {
                 ],
             });
 
+            await hydrateMissingMercadoPagoPaymentDetails(orders);
             return res.status(200).json(orders.map(formatOrder));
         } catch (error) {
             return sendServerError(res, 'Erro ao listar seus pedidos.', error);
@@ -494,6 +604,7 @@ class OrderController {
                 ],
             });
 
+            await hydrateMissingMercadoPagoPaymentDetails(orders);
             return res.status(200).json(orders.map(formatOrder));
         } catch (error) {
             return sendServerError(res, 'Erro ao listar pedidos.', error);

@@ -16,6 +16,10 @@ class Order extends Model {
                 type: Sequelize.STRING,
                 allowNull: true,
             },
+            payment_details_json: {
+                type: Sequelize.TEXT,
+                allowNull: true,
+            },
             customer_name: {
                 type: Sequelize.STRING,
                 allowNull: true,

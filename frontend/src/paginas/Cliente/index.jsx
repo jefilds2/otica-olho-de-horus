@@ -48,6 +48,42 @@ const statusEnvioMap = {
   entregue: { label: 'Entregue', className: 'badge sucesso' },
 }
 
+function obterResumoPagamento(pedido) {
+  const detalhes = pedido?.payment_details
+  if (!detalhes) return 'Forma não informada'
+
+  const base = detalhes.method_label || 'Forma não informada'
+  if (detalhes.payment_method_id === 'pix') {
+    return base
+  }
+
+  if (detalhes.installments && detalhes.installments > 1) {
+    return `${base} (${detalhes.installments}x)`
+  }
+
+  return base
+}
+
+function obterDetalhesPagamentoSecundarios(pedido) {
+  const detalhes = pedido?.payment_details
+  if (!detalhes) return []
+
+  const linhas = []
+  if (detalhes.installments && detalhes.installments > 1 && detalhes.installment_amount) {
+    linhas.push(`${detalhes.installments}x de ${moeda.format(Number(detalhes.installment_amount))}`)
+  }
+
+  if (detalhes.card_last_four_digits) {
+    linhas.push(`Final ${detalhes.card_last_four_digits}`)
+  }
+
+  if (detalhes.issuer_name) {
+    linhas.push(detalhes.issuer_name)
+  }
+
+  return linhas
+}
+
 function formatarData(data) {
   if (!data) return 'Sem data'
   return new Date(data).toLocaleDateString('pt-BR')
@@ -436,7 +472,7 @@ export function Cliente() {
                       <div className="pedido-metricas">
                         <p><span>Total</span><b>{moeda.format(Number(pedido.total_amount || 0))}</b></p>
                         <p><span>Frete</span><b>{pedido.shipping_service_name || 'Não informado'}</b></p>
-                        <p><span>Pagamento</span><b>{statusPedido.label}</b></p>
+                        <p><span>Pagamento</span><b>{statusPedido.label}</b><small>{obterResumoPagamento(pedido)}</small></p>
                       </div>
                       <button
                         className={`botao-detalhe-pedido ${pedidoAberto ? 'aberto' : ''}`}
@@ -469,6 +505,10 @@ export function Cliente() {
                             <div className="detalhe-bloco">
                               <strong>Resumo financeiro</strong>
                               <div className="detalhe-linhas">
+                                <p><span>Forma de pagamento</span><b>{obterResumoPagamento(pedido)}</b></p>
+                                {obterDetalhesPagamentoSecundarios(pedido).map((linha) => (
+                                  <p key={`pagamento-${pedido.id}-${linha}`}><span>Detalhe</span><b>{linha}</b></p>
+                                ))}
                                 <p><span>Subtotal</span><b>{moeda.format(subtotal)}</b></p>
                                 <p><span>Frete</span><b>{moeda.format(frete)}</b></p>
                                 <p className="total"><span>Total pago</span><b>{moeda.format(total)}</b></p>

@@ -107,6 +107,42 @@ const cropEditorInicial = {
   naturalHeight: 1,
 }
 
+function obterResumoPagamento(pedido) {
+  const detalhes = pedido?.payment_details
+  if (!detalhes) return 'Forma não informada'
+
+  const base = detalhes.method_label || 'Forma não informada'
+  if (detalhes.payment_method_id === 'pix') {
+    return base
+  }
+
+  if (detalhes.installments && detalhes.installments > 1) {
+    return `${base} (${detalhes.installments}x)`
+  }
+
+  return base
+}
+
+function obterDetalhesPagamentoSecundarios(pedido, moeda) {
+  const detalhes = pedido?.payment_details
+  if (!detalhes) return []
+
+  const linhas = []
+  if (detalhes.installments && detalhes.installments > 1 && detalhes.installment_amount) {
+    linhas.push(`${detalhes.installments}x de ${moeda.format(Number(detalhes.installment_amount))}`)
+  }
+
+  if (detalhes.card_last_four_digits) {
+    linhas.push(`Final ${detalhes.card_last_four_digits}`)
+  }
+
+  if (detalhes.issuer_name) {
+    linhas.push(detalhes.issuer_name)
+  }
+
+  return linhas
+}
+
 function lerListaStorage(chave) {
   if (typeof window === 'undefined') return []
 
@@ -3320,6 +3356,8 @@ export function Admin() {
                       {pedidosFiltrados.length > 0 ? pedidosFiltrados.map((pedido) => {
                         const statusPagamento = obterStatusPedido(pedido.status)
                         const statusEnvio = obterStatusEnvioPedido(pedido)
+                        const resumoPagamento = obterResumoPagamento(pedido)
+                        const detalhesPagamento = obterDetalhesPagamentoSecundarios(pedido, moeda)
 
                         return (
                           <tr key={pedido.id}>
@@ -3334,6 +3372,8 @@ export function Admin() {
                             <td>{formatarData(pedido.paid_at || pedido.created_at)}</td>
                             <td className="coluna-pagamento">
                               <strong>{statusPagamento.label}</strong>
+                              <span>{resumoPagamento}</span>
+                              {detalhesPagamento.map((linha) => <span key={`${pedido.id}-${linha}`}>{linha}</span>)}
                               <span className="referencia-pagamento">{pedido.payment_reference}</span>
                             </td>
                             <td>
@@ -3341,17 +3381,17 @@ export function Admin() {
                               <span>{pedido.tracking_code || pedido.shipping_company_name || 'Sem rastreio'}</span>
                             </td>
                             <td>{moeda.format(Number(pedido.total_amount || 0))}</td>
-                            <td>
-                              <div className="acoes-tabela">
+                            <td className="coluna-acoes-pedido">
+                              <div className="acoes-tabela acoes-tabela-pedidos">
                                 <button className="botao-acao editar" type="button" onClick={() => editarPedido(pedido)}>
                                   <Truck size={15} />
                                   Gerenciar
                                 </button>
-                                <button className="botao-acao editar" type="button" onClick={() => abrirDetalhesPedido(pedido)}>
+                                <button className="botao-acao visualizar" type="button" onClick={() => abrirDetalhesPedido(pedido)}>
                                   <Eye size={15} />
                                   Detalhes
                                 </button>
-                                <button className="botao-acao" type="button" onClick={() => imprimirResumoEnvio(pedido)}>
+                                <button className="botao-acao imprimir" type="button" onClick={() => imprimirResumoEnvio(pedido)}>
                                   <Printer size={15} />
                                   Imprimir
                                 </button>
@@ -3787,6 +3827,11 @@ export function Admin() {
                       <strong>Pagamento</strong>
                       <div className="detalhe-pedido-admin-linhas">
                         <p><span>Status</span><b>{obterStatusPedido(pedidoDetalhado.status).label}</b></p>
+                        <p><span>Forma</span><b>{obterResumoPagamento(pedidoDetalhado)}</b></p>
+                        {obterDetalhesPagamentoSecundarios(pedidoDetalhado, moeda).map((linha) => (
+                          <p key={`detalhe-pagamento-${linha}`}><span>Detalhe</span><b>{linha}</b></p>
+                        ))}
+                        <p><span>ID da transação</span><b>{pedidoDetalhado.payment_transaction_id || 'Não informado'}</b></p>
                         <p><span>Subtotal</span><b>{moeda.format(Number(pedidoDetalhado.subtotal_amount || 0))}</b></p>
                         <p><span>Frete</span><b>{moeda.format(Number(pedidoDetalhado.shipping_price || 0))}</b></p>
                         <p><span>Total</span><b>{moeda.format(Number(pedidoDetalhado.total_amount || 0))}</b></p>
