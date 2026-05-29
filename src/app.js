@@ -50,12 +50,28 @@ app.use('/uploads', (_req, res, next) => {
     next();
 }, express.static(resolve('uploads')));
 
-app.use(routes);
-
 const frontendDistDir = resolve('frontend', 'dist');
 const frontendIndexFile = resolve(frontendDistDir, 'index.html');
+const hasFrontendBuild = existsSync(frontendIndexFile);
 
-if (existsSync(frontendIndexFile)) {
+if (hasFrontendBuild) {
+    app.use((req, res, next) => {
+        const acceptHeader = String(req.headers.accept || '');
+        const isSpaAdminRoute = req.method === 'GET'
+            && req.path === '/admin'
+            && acceptHeader.includes('text/html');
+
+        if (!isSpaAdminRoute) {
+            return next();
+        }
+
+        return res.sendFile(frontendIndexFile);
+    });
+}
+
+app.use(routes);
+
+if (hasFrontendBuild) {
     app.use(express.static(frontendDistDir));
 
     app.use((req, res, next) => {
