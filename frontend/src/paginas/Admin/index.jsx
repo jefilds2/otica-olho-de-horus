@@ -3180,7 +3180,7 @@ export function Admin() {
                         </article>
                       </div>
                     ) : null}
-                    <button className="botao destaque" type="submit">{categoriaEditandoId ? 'Salvar alterações' : 'Cadastrar categoria'}</button>
+                    <button className="botao destaque botao-salvar-categoria" type="submit">{categoriaEditandoId ? 'Salvar alterações' : 'Cadastrar categoria'}</button>
                   </form>
 
                   <div className="admin-card lista-categorias-card">

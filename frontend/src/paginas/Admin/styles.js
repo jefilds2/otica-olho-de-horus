@@ -1663,6 +1663,10 @@ export const AdminPage = styled.section`
     margin-top: 14px;
   }
 
+  .botao-salvar-categoria {
+    margin-top: 16px;
+  }
+
   .editor-recorte-overlay {
     position: fixed;
     inset: 0;
