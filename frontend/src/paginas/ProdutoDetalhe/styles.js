@@ -204,13 +204,6 @@ export const ProdutoDetalhePage = styled.section`
     font-size: 17px;
   }
 
-  .pix {
-    margin: 0;
-    color: #16a34a;
-    font-size: 15px;
-    font-weight: 600;
-  }
-
   .descricao-resumida {
     margin: 0;
     color: #31435f;

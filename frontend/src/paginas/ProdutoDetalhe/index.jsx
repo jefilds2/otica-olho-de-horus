@@ -120,7 +120,6 @@ export function ProdutoDetalhe() {
   const imagemProduto = imagensProduto[imagemSelecionadaIndex] || imagensProduto[0] || ''
   const precoAtual = produto ? Number(produto.price) : 0
   const precoAntigo = produto?.old_price ? Number(produto.old_price) : null
-  const precoPix = precoAtual * 0.95
   const estoqueDisponivel = Number(produto?.stock_quantity || 0)
   const installmentsCount = Math.max(1, Number(produto?.installments_count || 10))
   const exibirParcelamento = produto?.installments_enabled !== false
@@ -427,7 +426,6 @@ export function ProdutoDetalhe() {
                 {precoAntigo && <span>{moeda.format(precoAntigo)}</span>}
               </div>
               {exibirParcelamento && <p className="parcelado">ou {installmentsCount}x de {moeda.format(precoAtual / installmentsCount)} sem juros no cartão</p>}
-              <p className="pix">{moeda.format(precoPix)} à vista no PIX (5% off)</p>
             </div>
 
             <p className="descricao-resumida">{produto.description}</p>
