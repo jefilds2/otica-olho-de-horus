@@ -52,16 +52,7 @@ function obterResumoPagamento(pedido) {
   const detalhes = pedido?.payment_details
   if (!detalhes) return 'Forma não informada'
 
-  const base = detalhes.method_label || 'Forma não informada'
-  if (detalhes.payment_method_id === 'pix') {
-    return base
-  }
-
-  if (detalhes.installments && detalhes.installments > 1) {
-    return `${base} (${detalhes.installments}x)`
-  }
-
-  return base
+  return detalhes.method_label || 'Forma não informada'
 }
 
 function obterDetalhesPagamentoSecundarios(pedido) {
