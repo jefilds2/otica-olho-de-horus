@@ -1,7 +1,11 @@
 import { mkdir, unlink } from 'node:fs/promises';
 import { resolve, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-export const UPLOADS_ROOT_DIR = resolve(process.cwd(), process.env.UPLOADS_DIR || 'uploads');
+const currentFilePath = fileURLToPath(import.meta.url);
+const projectRootDir = resolve(currentFilePath, '..', '..', '..');
+
+export const UPLOADS_ROOT_DIR = resolve(projectRootDir, process.env.UPLOADS_DIR || 'uploads');
 export const PRODUCT_UPLOADS_SUBDIR = 'products';
 export const CATEGORY_UPLOADS_SUBDIR = 'categories';
 

@@ -14,7 +14,8 @@ const allowedExtensions = new Set([
     ".png",
 ]);
 
-const uploadsRootDir = resolve(process.cwd(), process.env.UPLOADS_DIR || "uploads");
+const projectRootDir = resolve(__dirname, "..", "..");
+const uploadsRootDir = resolve(projectRootDir, process.env.UPLOADS_DIR || "uploads");
 
 function resolveUploadDestination(file) {
     const subdir = file.fieldname === "files" ? "products" : "categories";
