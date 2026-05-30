@@ -150,6 +150,16 @@ function somenteDigitos(valor) {
   return String(valor || '').replace(/\D/g, '')
 }
 
+function formatarCnpj(valor) {
+  const digitos = somenteDigitos(valor).slice(0, 14)
+
+  return digitos
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1/$2')
+    .replace(/(\d{4})(\d)/, '$1-$2')
+}
+
 function extrairCentavos(valor) {
   if (valor === null || valor === undefined || valor === '') return ''
   const numero = Number(valor)
@@ -613,7 +623,7 @@ const filtrosVendasPeriodo = [
 function normalizarConfigLojaForm(configuracoes = {}) {
   return {
     store_name: configuracoes.store_name || 'Ótica Olho de Hórus',
-    cnpj: configuracoes.cnpj || '',
+    cnpj: formatarCnpj(configuracoes.cnpj || ''),
     contact_email: configuracoes.contact_email || '',
     contact_phone: configuracoes.contact_phone || '',
     shipping_origin_postal_code: configuracoes.shipping_origin_postal_code || '',
@@ -1614,7 +1624,7 @@ export function Admin() {
               <div class="etiqueta">Remetente</div>
               <strong>${configLojaForm.store_name || 'Ótica Olho de Hórus'}</strong>
               <p>${origem || 'Configure o endereço de origem da loja no painel.'}</p>
-              <p>${configLojaForm.cnpj ? `CNPJ ${configLojaForm.cnpj}` : ''}</p>
+              <p>${configLojaForm.cnpj ? `CNPJ ${formatarCnpj(configLojaForm.cnpj)}` : ''}</p>
             </section>
             <section class="bloco">
               <div class="etiqueta">Destinatário</div>
@@ -4163,7 +4173,7 @@ export function Admin() {
                     <Settings />
                     <h2>Informações da loja</h2>
                     <label>Nome da loja<input value={configLojaForm.store_name} onChange={(e) => setConfigLojaForm({ ...configLojaForm, store_name: e.target.value })} /></label>
-                    <label>CNPJ<input value={configLojaForm.cnpj} onChange={(e) => setConfigLojaForm({ ...configLojaForm, cnpj: e.target.value })} /></label>
+                    <label>CNPJ<input value={configLojaForm.cnpj} onChange={(e) => setConfigLojaForm({ ...configLojaForm, cnpj: formatarCnpj(e.target.value) })} placeholder="00.000.000/0000-00" /></label>
                   </div>
                   <div className="admin-card config-card">
                     <Mail />

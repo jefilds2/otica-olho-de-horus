@@ -94,6 +94,10 @@ function normalizeMercadoPagoPaymentValue(value) {
     return value == null || value === '' ? null : String(value).trim();
 }
 
+function isMercadoPagoTestUserEmail(email) {
+    return String(email || '').trim().toLowerCase().endsWith('@testuser.com');
+}
+
 function mapMercadoPagoPaymentMethodLabel({ methodId, paymentTypeId, installments }) {
     const normalizedMethodId = String(methodId || '').trim().toLowerCase();
     const normalizedPaymentTypeId = String(paymentTypeId || '').trim().toLowerCase();
@@ -528,15 +532,20 @@ async function syncOrderWithMercadoPagoPayment({ order, payment, transaction }) 
     const nextStatus = mapMercadoPagoOrderStatus(payment) || order.status;
     const amount = payment?.transaction_amount;
     const payer = payment?.payer || {};
+    const payerEmail = String(payer.email || '').trim().toLowerCase();
     const phoneNumber = payer?.phone?.number || payer?.phone?.area_code
         ? [payer?.phone?.area_code, payer?.phone?.number].filter(Boolean).join('')
         : null;
     const wasPaid = order.status === 'pago';
     const willBePaid = nextStatus === 'pago';
+    const preferredCustomerEmail = isMercadoPagoTestUserEmail(payerEmail)
+        ? (order.user?.email || order.customer_email || payerEmail || null)
+        : (payerEmail || order.customer_email || order.user?.email || null);
+
     const updatedFields = {
         payment_transaction_id: payment?.id ? String(payment.id) : order.payment_transaction_id,
         payment_details_json: JSON.stringify(extractMercadoPagoPaymentDetails(payment)),
-        customer_email: payer.email || order.customer_email,
+        customer_email: preferredCustomerEmail,
         customer_name: order.customer_name,
         customer_phone: phoneNumber || order.customer_phone,
         currency: String(payment?.currency_id || order.currency || 'brl').toLowerCase(),
@@ -764,6 +773,11 @@ class OrderController {
                         {
                             model: OrderItem,
                             as: 'items',
+                        },
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['id', 'name', 'email', 'cpf', 'phone'],
                         },
                     ],
                     transaction,

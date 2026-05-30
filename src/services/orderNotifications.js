@@ -46,6 +46,10 @@ const stageMeta = {
     },
 };
 
+function isMercadoPagoTestUserEmail(email) {
+    return String(email || '').trim().toLowerCase().endsWith('@testuser.com');
+}
+
 function parseJsonField(value) {
     if (!value) return null;
 
@@ -77,6 +81,16 @@ function formatDateTime(value) {
     } catch {
         return 'Não informado';
     }
+}
+
+function formatCnpj(value) {
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 14);
+
+    return digits
+        .replace(/^(\d{2})(\d)/, '$1.$2')
+        .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+        .replace(/\.(\d{3})(\d)/, '.$1/$2')
+        .replace(/(\d{4})(\d)/, '$1-$2');
 }
 
 function buildStoreAddress(store) {
@@ -227,7 +241,7 @@ function buildOrderEmailHtml({ order, stage, store }) {
               <div style="padding:20px;border-radius:18px;background:#f8fafc;border:1px solid #e7ecf3;">
                 <h3 style="margin:0 0 10px;font-size:16px;color:#1f2a44;">Atendimento</h3>
                 <p style="margin:0 0 8px;line-height:1.6;color:#52607a;">${escapeHtml(store.name)}</p>
-                ${store.cnpj ? `<p style="margin:0 0 8px;line-height:1.6;color:#52607a;">CNPJ: ${escapeHtml(store.cnpj)}</p>` : ''}
+                ${store.cnpj ? `<p style="margin:0 0 8px;line-height:1.6;color:#52607a;">CNPJ: ${escapeHtml(formatCnpj(store.cnpj))}</p>` : ''}
                 ${store.email ? `<p style="margin:0 0 8px;line-height:1.6;color:#52607a;">E-mail: ${escapeHtml(store.email)}</p>` : ''}
                 ${store.phone ? `<p style="margin:0 0 8px;line-height:1.6;color:#52607a;">Telefone: ${escapeHtml(store.phone)}</p>` : ''}
                 ${storeAddress ? `<p style="margin:0;line-height:1.6;color:#52607a;">${escapeHtml(storeAddress)}</p>` : ''}
@@ -264,7 +278,11 @@ function buildOrderEmailText({ order, stage, store }) {
 }
 
 export async function notifyOrderStageChange(order, { force = false } = {}) {
-    const destinationEmail = String(order?.customer_email || order?.user?.email || '').trim().toLowerCase();
+    const customerEmail = String(order?.customer_email || '').trim().toLowerCase();
+    const userEmail = String(order?.user?.email || '').trim().toLowerCase();
+    const destinationEmail = isMercadoPagoTestUserEmail(customerEmail) && userEmail
+        ? userEmail
+        : (customerEmail || userEmail);
 
     if (!destinationEmail) {
         return null;
