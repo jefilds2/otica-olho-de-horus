@@ -506,7 +506,6 @@ async function syncOrderTrackingFromMelhorEnvio(order, storeSettings) {
 
 function mapMercadoPagoOrderStatus(payment) {
     const status = String(payment?.status || '').trim().toLowerCase();
-    const statusDetail = String(payment?.status_detail || '').trim().toLowerCase();
 
     if (status === 'approved') {
         return 'pago';
@@ -520,15 +519,7 @@ function mapMercadoPagoOrderStatus(payment) {
         return 'aguardando_pagamento';
     }
 
-    if (status === 'cancelled' && statusDetail.includes('expired')) {
-        return 'expirado';
-    }
-
-    if (['cancelled', 'rejected', 'refunded', 'charged_back'].includes(status)) {
-        return 'cancelado';
-    }
-
-    return null;
+    return 'aguardando_pagamento';
 }
 
 async function syncOrderWithMercadoPagoPayment({ order, payment, transaction }) {
