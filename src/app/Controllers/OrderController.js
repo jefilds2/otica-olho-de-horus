@@ -589,6 +589,18 @@ async function notifyOrderStageAfterReload(orderId) {
     }
 
     await notifyOrderStageSafely(order);
+
+    if (order.last_notified_stage !== getCustomerOrderStage(order)) {
+        const refreshedOrder = await loadAdminOrder(orderId);
+
+        if (refreshedOrder && refreshedOrder.last_notified_stage !== getCustomerOrderStage(refreshedOrder)) {
+            await notifyOrderStageSafely(refreshedOrder);
+            return refreshedOrder;
+        }
+
+        return refreshedOrder || order;
+    }
+
     return order;
 }
 
@@ -727,7 +739,7 @@ class OrderController {
                     ],
                 });
 
-                await notifyOrderStageSafely(order);
+                await notifyOrderStageAfterReload(order.id);
 
                 return res.status(200).json(formatOrder(order));
             } catch (error) {
@@ -987,7 +999,7 @@ class OrderController {
                     ],
                 });
 
-                await notifyOrderStageSafely(order);
+                await notifyOrderStageAfterReload(order.id);
 
                 return res.status(200).json(formatOrder(order));
             } catch (error) {
@@ -1042,7 +1054,7 @@ class OrderController {
             });
 
             const refreshedOrder = await loadAdminOrder(order.id);
-            await notifyOrderStageSafely(refreshedOrder);
+            await notifyOrderStageAfterReload(order.id);
             return res.status(200).json(formatOrder(refreshedOrder));
         } catch (error) {
             return res.status(400).json({ error: error.message || 'Erro ao preparar etiqueta no Melhor Envio.' });
@@ -1082,7 +1094,7 @@ class OrderController {
             }
 
             const refreshedOrder = await loadAdminOrder(order.id);
-            await notifyOrderStageSafely(refreshedOrder);
+            await notifyOrderStageAfterReload(order.id);
             return res.status(200).json(formatOrder(refreshedOrder));
         } catch (error) {
             return res.status(400).json({ error: error.message || 'Erro ao comprar etiqueta no Melhor Envio.' });
@@ -1131,7 +1143,7 @@ class OrderController {
             await syncOrderTrackingFromMelhorEnvio(order, storeSettings);
 
             const refreshedOrder = await loadAdminOrder(order.id);
-            await notifyOrderStageSafely(refreshedOrder);
+            await notifyOrderStageAfterReload(order.id);
             return res.status(200).json(formatOrder(refreshedOrder));
         } catch (error) {
             return res.status(400).json({ error: error.message || 'Erro ao gerar etiqueta no Melhor Envio.' });
@@ -1172,7 +1184,7 @@ class OrderController {
             await syncOrderTrackingFromMelhorEnvio(order, storeSettings);
 
             const refreshedOrder = await loadAdminOrder(order.id);
-            await notifyOrderStageSafely(refreshedOrder);
+            await notifyOrderStageAfterReload(order.id);
             return res.status(200).json({
                 order: formatOrder(refreshedOrder),
                 print_url: printUrl,
@@ -1204,7 +1216,7 @@ class OrderController {
 
             await applyMelhorEnvioTrackingUpdate(order, payload || {});
             const refreshedOrder = await loadAdminOrder(order.id);
-            await notifyOrderStageSafely(refreshedOrder);
+            await notifyOrderStageAfterReload(order.id);
             return res.status(200).json(formatOrder(refreshedOrder));
         } catch (error) {
             return res.status(400).json({ error: error.message || 'Erro ao sincronizar status da etiqueta no Melhor Envio.' });
@@ -1233,7 +1245,7 @@ class OrderController {
             });
 
             const refreshedOrder = await loadAdminOrder(order.id);
-            await notifyOrderStageSafely(refreshedOrder);
+            await notifyOrderStageAfterReload(order.id);
             return res.status(200).json(formatOrder(refreshedOrder));
         } catch (error) {
             return res.status(400).json({ error: error.message || 'Erro ao resetar o processo do Melhor Envio.' });
