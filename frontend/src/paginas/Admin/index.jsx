@@ -459,31 +459,53 @@ async function gerarArquivoRecortado({
   return new File([blob], `${nomeBase}.png`, { type: tipoSaida, lastModified: Date.now() })
 }
 
-const produtoInicial = {
-  name: '',
-  description: '',
-  brand: '',
-  color: '',
-  available_colors: [corDisponivelInicial],
-  price: '',
-  old_price: '',
-  discount_percentage: '',
-  stock_quantity: '',
-  category_id: '',
-  installments_enabled: true,
-  installments_count: 10,
-  weight: formatarPesoCampo('0400'),
-  width: '16',
-  height: '6',
-  length: '18',
-  frame_material: '',
-  size_label: 'Médio',
-  lens_width_mm: '52',
-  bridge_mm: '18',
-  temple_length_mm: '145',
-  gender: 'Unissex',
-  existing_images: [],
-  files: [],
+function criarProdutoInicial(configuracoes = {}) {
+  const defaultWeight = configuracoes.default_package_weight !== ''
+    && configuracoes.default_package_weight != null
+    ? String(configuracoes.default_package_weight)
+    : '0.400'
+
+  const defaultWidth = configuracoes.default_package_width !== ''
+    && configuracoes.default_package_width != null
+    ? String(configuracoes.default_package_width)
+    : '16'
+
+  const defaultHeight = configuracoes.default_package_height !== ''
+    && configuracoes.default_package_height != null
+    ? String(configuracoes.default_package_height)
+    : '6'
+
+  const defaultLength = configuracoes.default_package_length !== ''
+    && configuracoes.default_package_length != null
+    ? String(configuracoes.default_package_length)
+    : '18'
+
+  return {
+    name: '',
+    description: '',
+    brand: '',
+    color: '',
+    available_colors: [corDisponivelInicial],
+    price: '',
+    old_price: '',
+    discount_percentage: '',
+    stock_quantity: '',
+    category_id: '',
+    installments_enabled: true,
+    installments_count: 10,
+    weight: formatarPesoCampo(defaultWeight),
+    width: defaultWidth,
+    height: defaultHeight,
+    length: defaultLength,
+    frame_material: '',
+    size_label: 'Médio',
+    lens_width_mm: '52',
+    bridge_mm: '18',
+    temple_length_mm: '145',
+    gender: 'Unissex',
+    existing_images: [],
+    files: [],
+  }
 }
 
 const cupomInicial = {
@@ -688,7 +710,7 @@ export function Admin() {
   const [pedidos, setPedidos] = useState([])
   const [cupons, setCupons] = useState([])
   const [categoriaForm, setCategoriaForm] = useState(categoriaInicial)
-  const [produtoForm, setProdutoForm] = useState(produtoInicial)
+  const [produtoForm, setProdutoForm] = useState(() => criarProdutoInicial())
   const [cupomForm, setCupomForm] = useState(cupomInicial)
   const [categoriaEditandoId, setCategoriaEditandoId] = useState(null)
   const [produtoEditandoId, setProdutoEditandoId] = useState(null)
@@ -1757,7 +1779,7 @@ export function Admin() {
 
   function resetarFormularioProduto() {
     limparArquivosTemporarios()
-    setProdutoForm(produtoInicial)
+    setProdutoForm(criarProdutoInicial(configLojaForm))
     setProdutoEditandoId(null)
     setOrigemPrecificacao('desconto')
   }
