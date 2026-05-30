@@ -178,6 +178,16 @@ function buildPasswordResetPage({ email = '', token = '', error = '', success = 
         font-size: 16px;
         font-weight: 700;
         cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+      }
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 30px rgba(217, 167, 58, 0.28);
+        filter: brightness(1.02);
+      }
+      button:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(34, 55, 88, 0.14), 0 14px 30px rgba(217, 167, 58, 0.22);
       }
       .alert {
         padding: 14px 16px;
@@ -196,13 +206,26 @@ function buildPasswordResetPage({ email = '', token = '', error = '', success = 
         color: var(--success-text);
       }
       .actions {
-        margin-top: 10px;
+        margin-top: 18px;
         text-align: center;
       }
       .actions a {
         color: var(--primary);
         font-weight: 700;
         text-decoration: none;
+        display: inline-block;
+        padding: 8px 14px;
+        border-radius: 999px;
+        transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+      }
+      .actions a:hover {
+        background: rgba(34, 55, 88, 0.08);
+        color: #16386a;
+        transform: translateY(-1px);
+      }
+      .actions a:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(34, 55, 88, 0.14);
       }
     </style>
   </head>
