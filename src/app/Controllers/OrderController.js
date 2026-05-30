@@ -22,6 +22,7 @@ import {
 } from '../../services/orderNotifications.js';
 import * as Yup from 'yup';
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { assertStockAvailability } from '../../utils/inventory.js';
 
 const fulfillmentStatuses = ['em_preparacao', 'em_transporte', 'entregue'];
 const orderStatuses = ['aguardando_pagamento', 'processando', 'pago', 'expirado', 'cancelado'];
@@ -309,17 +310,19 @@ async function decrementOrderInventory(order, transaction) {
 
     const productsById = await loadOrderProductsForUpdate(order, transaction);
 
-    for (const item of order.items || []) {
-        const product = productsById.get(Number(item.product_id));
-
-        if (!product) {
-            throw new Error(`Produto do pedido não encontrado para baixa de estoque: ${item.product_name}.`);
-        }
-
-        if (Number(product.stock_quantity) < Number(item.quantity)) {
-            throw new Error(`Estoque insuficiente para "${item.product_name}" ao confirmar o pagamento.`);
-        }
-    }
+    assertStockAvailability({
+        items: order.items || [],
+        productsById,
+        getProductId: (item) => item.product_id,
+        getQuantity: (item) => item.quantity,
+        getProductName: (product, productId) => product?.name || `Produto ${productId}`,
+        missingProductMessage: ({ productId }) => (
+            `Produto do pedido não encontrado para baixa de estoque: ${productId}.`
+        ),
+        insufficientStockMessage: ({ productName }) => (
+            `Estoque insuficiente para "${productName}" ao confirmar o pagamento.`
+        ),
+    });
 
     for (const item of order.items || []) {
         const product = productsById.get(Number(item.product_id));
@@ -741,6 +744,14 @@ class OrderController {
                 throw error;
             }
         } catch (error) {
+            if (
+                error.message?.startsWith('Estoque insuficiente')
+                || error.message?.includes('Produto do pedido não encontrado para baixa de estoque')
+                || error.message?.includes('Payment not found')
+            ) {
+                return res.status(400).json({ error: error.message });
+            }
+
             return sendServerError(res, 'Erro ao confirmar pagamento do pedido.', error);
         }
     }

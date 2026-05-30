@@ -11,6 +11,7 @@ import { calculateShippingQuotes, getStorePickupQuote, STORE_PICKUP_SERVICE_ID }
 import { findValidCouponByCode } from '../../services/coupons.js';
 import { notifyOrderStageChange } from '../../services/orderNotifications.js';
 import { sendServerError } from '../../utils/http.js';
+import { assertStockAvailability } from '../../utils/inventory.js';
 
 const checkoutSchema = Yup.object({
     items: Yup.array().of(
@@ -241,15 +242,23 @@ class CheckoutController {
             const productsById = new Map(products.map((product) => [product.id, product]));
             const maxInstallments = getMaxInstallmentsFromProducts(products);
 
+            assertStockAvailability({
+                items: normalizedItems,
+                productsById,
+                getProductId: (item) => item.id,
+                getQuantity: (item) => item.quantity,
+                getProductName: (product) => product.name,
+                missingProductMessage: 'Produto não encontrado durante a montagem do checkout.',
+                insufficientStockMessage: ({ productName, availableQuantity }) => (
+                    `Estoque insuficiente para "${productName}". Restam ${availableQuantity} unidade(s) em estoque.`
+                ),
+            });
+
             const cartItems = normalizedItems.map((item) => {
                 const product = productsById.get(item.id);
 
                 if (!product) {
                     throw new Error('Produto não encontrado durante a montagem do checkout.');
-                }
-
-                if (Number(product.stock_quantity) < item.quantity) {
-                    throw new Error(`Estoque insuficiente para "${product.name}". Restam ${Number(product.stock_quantity)} unidade(s) em estoque.`);
                 }
 
                 return {
@@ -463,6 +472,22 @@ class CheckoutController {
             const retryProducts = retryProductIds.length > 0
                 ? await Product.findAll({ where: { id: retryProductIds } })
                 : [];
+            const retryProductsById = new Map(retryProducts.map((product) => [product.id, product]));
+
+            assertStockAvailability({
+                items: order.items,
+                productsById: retryProductsById,
+                getProductId: (item) => item.product_id,
+                getQuantity: (item) => item.quantity,
+                getProductName: (product, productId) => product?.name || `Produto ${productId}`,
+                missingProductMessage: ({ productId }) => (
+                    `Produto do pedido não encontrado para novo pagamento: ${productId}.`
+                ),
+                insufficientStockMessage: ({ productName, availableQuantity, requestedQuantity }) => (
+                    `Estoque insuficiente para "${productName}". O pedido precisa de ${requestedQuantity} unidade(s), mas restam ${availableQuantity} em estoque.`
+                ),
+            });
+
             const maxInstallments = retryProducts.length === retryProductIds.length
                 ? getMaxInstallmentsFromProducts(retryProducts)
                 : 1;
@@ -487,6 +512,10 @@ class CheckoutController {
                 orderId: order.id,
             });
         } catch (error) {
+            if (error.message?.startsWith('Estoque insuficiente') || error.message?.startsWith('Produto do pedido não encontrado')) {
+                return res.status(400).json({ error: error.message });
+            }
+
             return sendServerError(res, 'Erro ao gerar novo pagamento para o pedido.', error);
         }
     }
