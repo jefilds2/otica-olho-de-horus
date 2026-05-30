@@ -24,6 +24,8 @@ class User extends Model {
             is_active: Sequelize.BOOLEAN,
             email_verified_at: Sequelize.DATE,
             last_login_at: Sequelize.DATE,
+            reset_password_token_hash: Sequelize.STRING,
+            reset_password_expires_at: Sequelize.DATE,
         }, {
             sequelize,
             tableName: 'users',

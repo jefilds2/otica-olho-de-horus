@@ -1,5 +1,6 @@
 import express from 'express';
 import routes from './routes.js';
+import PasswordResetController from './app/Controllers/PasswordResetController.js';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import errorHandler from './app/middlewares/errorHandler.js';
@@ -45,6 +46,20 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+app.use((req, res, next) => {
+    const isPasswordResetViaLoginRoute = req.method === 'GET'
+        && req.path === '/login'
+        && req.query?.token
+        && req.query?.email;
+
+    if (!isPasswordResetViaLoginRoute) {
+        return next();
+    }
+
+    return PasswordResetController.showResetForm(req, res);
+});
+
 app.use('/uploads', (_req, res, next) => {
     // Imagens de produtos e categorias são públicas e precisam carregar no frontend.
     res.header('Cross-Origin-Resource-Policy', 'cross-origin');

@@ -157,6 +157,20 @@ export async function cadastrarUsuario(dados) {
   })
 }
 
+export async function solicitarRecuperacaoSenha(dados) {
+  return apiFetch('/password/forgot', {
+    method: 'POST',
+    body: JSON.stringify(dados),
+  })
+}
+
+export async function redefinirSenha(dados) {
+  return apiFetch('/password/reset', {
+    method: 'POST',
+    body: JSON.stringify(dados),
+  })
+}
+
 export async function buscarMeuCadastro() {
   return apiFetch('/me')
 }

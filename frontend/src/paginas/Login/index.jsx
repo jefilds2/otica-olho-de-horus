@@ -1,9 +1,14 @@
 import { LoginPage } from './styles'
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { useAuth } from '../../contextos/AuthContext'
-import { cadastrarUsuario, obterMensagemErroUsuario } from '../../servicos/api'
+import {
+  cadastrarUsuario,
+  obterMensagemErroUsuario,
+  redefinirSenha,
+  solicitarRecuperacaoSenha,
+} from '../../servicos/api'
 
 function aplicarMascaraCpf(valor) {
   const digitos = String(valor || '').replace(/\D/g, '').slice(0, 11)
@@ -36,23 +41,69 @@ function normalizarDataParaApi(valor) {
 
 export function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const { entrar } = useAuth()
   const [modoCadastro, setModoCadastro] = useState(false)
+  const [modoRecuperacao, setModoRecuperacao] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', password: '', cpf: '', birth_date: '', phone: '', whatsapp: '' })
+  const [recuperacaoForm, setRecuperacaoForm] = useState({ email: '', token: '', new_password: '', confirm_password: '' })
+  const tokenRecuperacao = searchParams.get('token') || ''
+  const emailRecuperacao = searchParams.get('email') || ''
+  const recuperacaoComToken = modoRecuperacao && Boolean(tokenRecuperacao)
 
   useEffect(() => {
-    setModoCadastro(searchParams.get('modo') === 'cadastro')
-  }, [searchParams])
+    const modo = searchParams.get('modo')
+    setModoCadastro(modo === 'cadastro')
+    setModoRecuperacao(
+      location.pathname === '/recuperar-senha'
+      || modo === 'recuperar'
+      || Boolean(searchParams.get('token'))
+    )
+  }, [location.pathname, searchParams])
+
+  useEffect(() => {
+    if (!modoRecuperacao) return
+
+    setRecuperacaoForm((atual) => ({
+      ...atual,
+      email: emailRecuperacao || atual.email,
+      token: tokenRecuperacao || atual.token,
+    }))
+  }, [modoRecuperacao, emailRecuperacao, tokenRecuperacao])
 
   function alterarCampo(campo, valor) {
     setForm((atual) => ({ ...atual, [campo]: valor }))
+  }
+
+  function alterarCampoRecuperacao(campo, valor) {
+    setRecuperacaoForm((atual) => ({ ...atual, [campo]: valor }))
   }
 
   async function enviarFormulario(evento) {
     evento.preventDefault()
 
     try {
+      if (modoRecuperacao) {
+        if (recuperacaoComToken) {
+          await redefinirSenha({
+            email: recuperacaoForm.email,
+            token: recuperacaoForm.token,
+            new_password: recuperacaoForm.new_password,
+            confirm_password: recuperacaoForm.confirm_password,
+          })
+          toast.success('Senha redefinida. Faça login com a nova senha.')
+          setRecuperacaoForm({ email: '', token: '', new_password: '', confirm_password: '' })
+          navigate('/login', { replace: true })
+          return
+        }
+
+        const resposta = await solicitarRecuperacaoSenha({ email: recuperacaoForm.email })
+        setRecuperacaoForm({ email: '', token: '', new_password: '', confirm_password: '' })
+        toast.success(resposta?.message || 'Se o e-mail estiver cadastrado, você receberá o link de recuperação.')
+        return
+      }
+
       if (modoCadastro) {
         await cadastrarUsuario({
           ...form,
@@ -77,8 +128,16 @@ export function Login() {
         <img className="logo-acesso" src="/logo-completa.png" alt="Ótica Olho de Hórus" />
 
         <div className="cabecalho-formulario">
-          <span className="subtitulo-formulario">{modoCadastro ? 'Criar conta' : 'Entrar'}</span>
-          <h2>{modoCadastro ? 'Cadastre sua conta' : 'Acesse sua conta'}</h2>
+          <span className="subtitulo-formulario">
+            {modoCadastro ? 'Criar conta' : modoRecuperacao ? 'Recuperar acesso' : 'Entrar'}
+          </span>
+          <h2>
+            {modoCadastro
+              ? 'Cadastre sua conta'
+              : modoRecuperacao
+                ? recuperacaoComToken ? 'Defina sua nova senha' : 'Recupere sua senha'
+                : 'Acesse sua conta'}
+          </h2>
         </div>
 
         {modoCadastro && (
@@ -117,28 +176,99 @@ export function Login() {
           </div>
         )}
 
-        <div className={modoCadastro ? 'form-grid form-grid-acesso' : 'campos-acesso'}>
-          <label className={modoCadastro ? 'campo-inteiro' : ''}>
-            E-mail
-            <input type="email" value={form.email} onChange={(e) => alterarCampo('email', e.target.value)} required />
-          </label>
-          <label className={modoCadastro ? 'campo-inteiro' : ''}>
-            Senha
-            <input type="password" value={form.password} onChange={(e) => alterarCampo('password', e.target.value)} required minLength={6} />
-          </label>
-        </div>
+        {modoRecuperacao ? (
+          <div className="campos-acesso">
+            <label>
+              E-mail
+              <input
+                type="email"
+                value={recuperacaoForm.email}
+                onChange={(e) => alterarCampoRecuperacao('email', e.target.value)}
+                required
+                readOnly={recuperacaoComToken && Boolean(emailRecuperacao)}
+              />
+            </label>
+            {recuperacaoComToken ? (
+              <>
+                <label>
+                  Nova senha
+                  <input
+                    type="password"
+                    value={recuperacaoForm.new_password}
+                    onChange={(e) => alterarCampoRecuperacao('new_password', e.target.value)}
+                    minLength={6}
+                    required
+                  />
+                </label>
+                <label>
+                  Confirmar nova senha
+                  <input
+                    type="password"
+                    value={recuperacaoForm.confirm_password}
+                    onChange={(e) => alterarCampoRecuperacao('confirm_password', e.target.value)}
+                    minLength={6}
+                    required
+                  />
+                </label>
+                <p className="texto-apoio-formulario">
+                  O link de recuperação é válido por 1 hora. Após salvar, use a nova senha para entrar.
+                </p>
+              </>
+            ) : (
+              <p className="texto-apoio-formulario">
+                Informe o e-mail da conta e enviaremos um link para você cadastrar uma nova senha.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className={modoCadastro ? 'form-grid form-grid-acesso' : 'campos-acesso'}>
+            <label className={modoCadastro ? 'campo-inteiro' : ''}>
+              E-mail
+              <input type="email" value={form.email} onChange={(e) => alterarCampo('email', e.target.value)} required />
+            </label>
+            <label className={modoCadastro ? 'campo-inteiro' : ''}>
+              Senha
+              <input type="password" value={form.password} onChange={(e) => alterarCampo('password', e.target.value)} required minLength={6} />
+            </label>
+          </div>
+        )}
 
         <div className="acoes-acesso">
           <button className="botao destaque largura-total" type="submit">
-            {modoCadastro ? 'Cadastrar conta' : 'Entrar na conta'}
+            {modoCadastro
+              ? 'Cadastrar conta'
+              : modoRecuperacao
+                ? recuperacaoComToken ? 'Salvar nova senha' : 'Enviar link de recuperação'
+                : 'Entrar na conta'}
           </button>
-          <button
-            className="link-botao"
-            type="button"
-            onClick={() => setSearchParams(modoCadastro ? {} : { modo: 'cadastro' })}
-          >
-            {modoCadastro ? 'Já tenho conta' : 'Criar nova conta'}
-          </button>
+          {!modoRecuperacao ? (
+            <>
+              <button
+                className="link-botao"
+                type="button"
+                onClick={() => setSearchParams(modoCadastro ? {} : { modo: 'cadastro' })}
+              >
+                {modoCadastro ? 'Já tenho conta' : 'Criar nova conta'}
+              </button>
+              {!modoCadastro ? (
+                <button
+                  className="link-botao"
+                  type="button"
+                  onClick={() => setSearchParams({ modo: 'recuperar' })}
+                >
+                  Esqueci minha senha
+                </button>
+              ) : null}
+            </>
+          ) : (
+            <button
+              className="link-botao"
+              type="button"
+              onClick={() => navigate('/login')}
+            >
+              Voltar para o login
+            </button>
+          )}
         </div>
       </form>
     </LoginPage>

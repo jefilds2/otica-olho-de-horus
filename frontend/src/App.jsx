@@ -36,6 +36,10 @@ function RouteSeoRules() {
     return <SeoHead title="Login | Ótica Olho de Hórus" canonical="/login" noindex />
   }
 
+  if (path === '/recuperar-senha') {
+    return <SeoHead title="Recuperação de senha | Ótica Olho de Hórus" canonical="/recuperar-senha" noindex />
+  }
+
   return null
 }
 
@@ -54,6 +58,7 @@ export default function App() {
               <Route path="/produto/:slug" element={<ProdutoDetalhe />} />
               <Route path="/carrinho" element={<Carrinho />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/recuperar-senha" element={<Login />} />
               <Route path="/cliente" element={<Cliente />} />
               <Route path="/sobre" element={<Sobre />} />
               <Route path="/contato" element={<Contato />} />

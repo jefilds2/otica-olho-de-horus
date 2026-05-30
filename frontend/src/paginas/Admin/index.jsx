@@ -520,6 +520,15 @@ const statusEnvioMap = {
   entregue: { label: 'Entregue', className: 'badge sucesso' },
 }
 
+const statusComercialMap = {
+  pedido_realizado: { label: 'Pedido realizado', className: 'badge' },
+  pagamento_confirmado: { label: 'Pagamento confirmado', className: 'badge sucesso' },
+  em_preparacao: { label: 'Em preparação', className: 'badge alerta' },
+  em_transporte: { label: 'Em transporte', className: 'badge' },
+  entregue: { label: 'Entregue', className: 'badge sucesso' },
+  cancelado: { label: 'Cancelado', className: 'badge perigo' },
+}
+
 const servicosEntregaAdmin = [
   { value: '1', label: 'PAC', company: 'Correios' },
   { value: '2', label: 'SEDEX', company: 'Correios' },
@@ -529,6 +538,10 @@ const servicosEntregaAdmin = [
 function pedidoEhRetiradaLoja(pedidoOuForm = {}) {
   return String(pedidoOuForm?.shipping_service_id || '') === 'retirada_loja'
     || String(pedidoOuForm?.shipping_service_name || '').toLowerCase().includes('retirar na loja')
+}
+
+function obterStatusComercialPedido(pedido) {
+  return statusComercialMap[pedido?.customer_stage] || { label: pedido?.customer_stage_label || 'Pedido realizado', className: 'badge' }
 }
 
 function obterClasseFluxoMelhorEnvio({ enabled, completed, keepEnabledWhenCompleted = false }) {
@@ -3373,6 +3386,7 @@ export function Admin() {
                       {pedidosFiltrados.length > 0 ? pedidosFiltrados.map((pedido) => {
                         const statusPagamento = obterStatusPedido(pedido.status)
                         const statusEnvio = obterStatusEnvioPedido(pedido)
+                        const statusComercial = obterStatusComercialPedido(pedido)
                         const resumoPagamento = obterResumoPagamento(pedido)
                         const detalhesPagamento = obterDetalhesPagamentoSecundarios(pedido, moeda)
 
@@ -3397,7 +3411,8 @@ export function Admin() {
                             </td>
                             <td className="coluna-envio-admin">
                               <div className="bloco-envio-admin">
-                                <span className={statusEnvio.className}>{statusEnvio.label}</span>
+                                <span className={statusComercial.className}>{statusComercial.label}</span>
+                                <span>{statusEnvio.label}</span>
                                 <span>{pedido.tracking_code || pedido.shipping_company_name || 'Sem rastreio'}</span>
                               </div>
                             </td>

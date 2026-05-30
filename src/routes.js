@@ -9,6 +9,7 @@ import AddressController from "./app/Controllers/AddressController.js";
 import ShippingController from "./app/Controllers/ShippingController.js";
 import StoreSettingController from "./app/Controllers/StoreSettingController.js";
 import CouponController from "./app/Controllers/CouponController.js";
+import PasswordResetController from "./app/Controllers/PasswordResetController.js";
 import multer from "multer";
 import multerConfig from "./config/multer.cjs";
 import authMiddleware from "./app/middlewares/auth.js";
@@ -24,6 +25,10 @@ const uploud = multer(multerConfig);
 
 routes.post("/users", authRateLimit, UserController.store);
 routes.post("/session", authRateLimit, SessionController.store);
+routes.get("/recuperar-senha", PasswordResetController.showResetForm);
+routes.post("/password/forgot", authRateLimit, PasswordResetController.forgot);
+routes.post("/password/reset", authRateLimit, PasswordResetController.reset);
+routes.post("/password/reset/submit", authRateLimit, PasswordResetController.resetFromForm);
 
 routes.get("/products", ProductController.index);
 routes.get("/categories", CategoryController.index);

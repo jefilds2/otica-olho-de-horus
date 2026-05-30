@@ -39,6 +39,17 @@ export function buildCheckoutReturnUrl(status) {
     return `${baseUrl}/carrinho?checkout=${status}`;
 }
 
+export function buildPasswordResetUrl({ token, email }) {
+    const baseUrl = getFrontendPublicUrl() || getFrontendAppUrl();
+    const params = new URLSearchParams({
+        modo: 'recuperar',
+        token: String(token || '').trim(),
+        email: String(email || '').trim(),
+    });
+
+    return `${baseUrl}/login?${params.toString()}`;
+}
+
 export function getAllowedCorsOrigins() {
     const configuredOrigins = String(process.env.CORS_ALLOWED_ORIGINS || '')
         .split(',')

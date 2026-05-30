@@ -142,6 +142,10 @@ class Order extends Model {
                 type: Sequelize.DATE,
                 allowNull: true,
             },
+            last_notified_stage: {
+                type: Sequelize.STRING,
+                allowNull: true,
+            },
         }, {
             sequelize,
             tableName: 'orders',

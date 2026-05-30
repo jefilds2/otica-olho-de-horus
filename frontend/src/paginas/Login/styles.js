@@ -129,6 +129,13 @@ export const LoginPage = styled.section`
     box-shadow: 0 0 0 3px rgba(34, 55, 88, 0.14);
   }
 
+  .texto-apoio-formulario {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #52607a;
+  }
+
   @media (min-width: 641px) {
     .form-grid-acesso {
       align-items: end;

@@ -9,6 +9,7 @@ import { createCheckoutProPreference, getMercadoPagoNotificationUrl } from '../.
 import { buildCheckoutReturnUrl, getFrontendAppUrl } from '../../config/appUrls.js';
 import { calculateShippingQuotes, getStorePickupQuote, STORE_PICKUP_SERVICE_ID } from '../../services/shipping.js';
 import { findValidCouponByCode } from '../../services/coupons.js';
+import { notifyOrderStageChange } from '../../services/orderNotifications.js';
 import { sendServerError } from '../../utils/http.js';
 
 const checkoutSchema = Yup.object({
@@ -36,6 +37,14 @@ function buildCancelUrl() {
 
 function buildPendingUrl() {
     return buildCheckoutReturnUrl('pending');
+}
+
+async function notifyOrderStageSafely(order) {
+    try {
+        await notifyOrderStageChange(order);
+    } catch (error) {
+        console.error(`Falha ao enviar e-mail inicial do pedido ${order?.id}`, error);
+    }
 }
 
 function buildPreferenceItemsFromOrder(order) {
@@ -387,6 +396,15 @@ class CheckoutController {
                 );
 
                 await transaction.commit();
+                await order.reload({
+                    include: [
+                        {
+                            model: OrderItem,
+                            as: 'items',
+                        },
+                    ],
+                });
+                await notifyOrderStageSafely(order);
 
                 return res.status(201).json({
                     id: preference.id,

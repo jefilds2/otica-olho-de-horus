@@ -62,6 +62,15 @@ const statusEnvioMap = {
   entregue: { label: 'Entregue', className: 'badge sucesso' },
 }
 
+const statusComercialMap = {
+  pedido_realizado: { label: 'Pedido realizado', className: 'badge' },
+  pagamento_confirmado: { label: 'Pagamento confirmado', className: 'badge sucesso' },
+  em_preparacao: { label: 'Em preparação', className: 'badge alerta' },
+  em_transporte: { label: 'Em transporte', className: 'badge' },
+  entregue: { label: 'Entregue', className: 'badge sucesso' },
+  cancelado: { label: 'Cancelado', className: 'badge perigo' },
+}
+
 function obterResumoPagamento(pedido) {
   const detalhes = pedido?.payment_details
   if (!detalhes) return 'Forma não informada'
@@ -141,6 +150,10 @@ function obterStatusEnvioPedido(pedido) {
   }
 
   return statusEnvioMap.em_preparacao
+}
+
+function obterStatusComercialPedido(pedido) {
+  return statusComercialMap[pedido?.customer_stage] || { label: pedido?.customer_stage_label || 'Pedido realizado', className: 'badge' }
 }
 
 export function Cliente() {
@@ -495,6 +508,7 @@ export function Cliente() {
                 {pedidos.map((pedido) => {
                   const statusPedido = statusPedidoMap[pedido.status] || { label: pedido.status, className: 'badge' }
                   const statusEnvio = obterStatusEnvioPedido(pedido)
+                  const statusComercial = obterStatusComercialPedido(pedido)
                   const pedidoAberto = pedidoAbertoId === pedido.id
                   const subtotal = Number(pedido.subtotal_amount || 0)
                   const frete = Number(pedido.shipping_price || 0)
@@ -508,11 +522,12 @@ export function Cliente() {
                           <strong>Pedido #{pedido.id}</strong>
                           <span>{formatarData(pedido.paid_at || pedido.created_at)}</span>
                         </div>
-                        <span className={statusEnvio.className}>{statusEnvio.label}</span>
+                        <span className={statusComercial.className}>{statusComercial.label}</span>
                       </div>
                       <div className="pedido-metricas">
                         <p><span>Total</span><b>{moeda.format(Number(pedido.total_amount || 0))}</b></p>
                         <p><span>Frete</span><b>{pedido.shipping_service_name || 'Não informado'}</b></p>
+                        <p><span>Andamento</span><b>{statusComercial.label}</b><small>{statusEnvio.label}</small></p>
                         <p><span>Pagamento</span><b>{statusPedido.label}</b><small>{obterResumoPagamento(pedido)}</small></p>
                       </div>
                       <button
@@ -531,8 +546,22 @@ export function Cliente() {
                               <strong>Detalhes do pedido #{pedido.id}</strong>
                               <span>Confira os itens, pagamento e entrega deste pedido.</span>
                             </div>
-                            <span className={statusPedido.className}>{statusPedido.label}</span>
+                            <span className={statusComercial.className}>{statusComercial.label}</span>
                           </div>
+
+                          {Array.isArray(pedido.customer_timeline) && pedido.customer_timeline.length > 0 ? (
+                            <div className="detalhe-bloco">
+                              <strong>Linha do tempo</strong>
+                              <div className="detalhe-linhas">
+                                {pedido.customer_timeline.map((etapa) => (
+                                  <p key={`${pedido.id}-${etapa.code}`}>
+                                    <span>{etapa.completed ? 'Concluído' : 'Próxima etapa'}</span>
+                                    <b>{etapa.label}{etapa.current ? ' • etapa atual' : ''}</b>
+                                  </p>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null}
 
                           <div className="detalhe-pedido-grid">
                             <div className="detalhe-bloco">
