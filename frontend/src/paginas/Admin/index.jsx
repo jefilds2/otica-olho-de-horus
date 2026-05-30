@@ -686,6 +686,12 @@ function escaparHtml(valor) {
     .replace(/'/g, '&#39;')
 }
 
+function aplicarFallbackImagem(evento) {
+  if (evento.currentTarget.dataset.fallbackApplied === 'true') return
+  evento.currentTarget.dataset.fallbackApplied = 'true'
+  evento.currentTarget.src = '/logo-icone-olho.png'
+}
+
 function formatarDataHoraLocal(valor) {
   if (!valor) return ''
 
@@ -3866,7 +3872,7 @@ export function Admin() {
                       {(pedidoDetalhado.items || []).map((item) => (
                         <article key={item.id} className="detalhe-item-admin">
                           <div className="detalhe-item-admin-produto">
-                            <img src={montarUrlImagem(item.product_image)} alt={item.product_name} />
+                            <img src={montarUrlImagem(item.product_image)} alt={item.product_name} onError={aplicarFallbackImagem} />
                             <div className="detalhe-item-admin-meta">
                               <b>{item.product_name}</b>
                               <small className="detalhe-item-admin-auxiliar">Conferir modelo, cor e quantidade antes da separação.</small>
