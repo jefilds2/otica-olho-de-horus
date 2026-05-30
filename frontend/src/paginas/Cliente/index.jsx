@@ -14,6 +14,7 @@ import {
   excluirEndereco,
   listarMeusEnderecos,
   listarMeusPedidos,
+  montarUrlImagem,
   obterMensagemErroUsuario,
   pagarPedidoNovamente,
 } from '../../servicos/api'
@@ -69,6 +70,17 @@ const statusComercialMap = {
   em_transporte: { label: 'Em transporte', className: 'badge' },
   entregue: { label: 'Entregue', className: 'badge sucesso' },
   cancelado: { label: 'Cancelado', className: 'badge perigo' },
+}
+
+function aplicarFallbackImagem(evento) {
+  const imagem = evento.currentTarget
+
+  if (!imagem || imagem.dataset.fallbackApplied === 'true') {
+    return
+  }
+
+  imagem.dataset.fallbackApplied = 'true'
+  imagem.src = '/logo-icone-olho.png'
 }
 
 function obterResumoPagamento(pedido) {
@@ -569,6 +581,11 @@ export function Cliente() {
                               <div className="detalhe-itens">
                                 {(pedido.items || []).map((item) => (
                                   <article key={item.id} className="detalhe-item">
+                                    <img
+                                      src={montarUrlImagem(item.product_image)}
+                                      alt={item.product_name}
+                                      onError={aplicarFallbackImagem}
+                                    />
                                     <div>
                                       <b>{item.product_name}</b>
                                       <span>{item.quantity} unidade(s)</span>

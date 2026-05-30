@@ -725,10 +725,24 @@ export const ClientePage = styled.section`
     background: rgba(47, 94, 164, 0.05);
   }
 
+  .detalhe-item img {
+    width: 58px;
+    height: 58px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    object-fit: cover;
+    background: #fff;
+    border: 1px solid rgba(47, 94, 164, 0.12);
+  }
+
   .detalhe-item div,
   .detalhe-linhas {
     display: grid;
     gap: 4px;
+  }
+
+  .detalhe-item div {
+    flex: 1;
   }
 
   .detalhe-item span {
