@@ -244,6 +244,7 @@ export function Carrinho() {
         throw new Error('O gateway de pagamento não retornou a URL de finalização.')
       }
 
+      limparCarrinho()
       window.location.assign(resposta.url)
     } catch (error) {
       toast.error(obterMensagemErroUsuario(error))
