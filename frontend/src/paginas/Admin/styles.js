@@ -1088,42 +1088,42 @@ export const AdminPage = styled.section`
   .tabela-admin table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 760px;
+    min-width: 0;
     table-layout: fixed;
   }
 
   .tabela-admin .col-pedido-admin {
-    width: 10%;
-  }
-
-  .tabela-admin .col-cliente-admin {
-    width: 27%;
-  }
-
-  .tabela-admin .col-data-admin {
     width: 9%;
   }
 
+  .tabela-admin .col-cliente-admin {
+    width: 25%;
+  }
+
+  .tabela-admin .col-data-admin {
+    width: 8%;
+  }
+
   .tabela-admin .col-pagamento-admin {
-    width: 22%;
+    width: 21%;
   }
 
   .tabela-admin .col-envio-admin {
-    width: 10%;
+    width: 11%;
   }
 
   .tabela-admin .col-total-admin {
-    width: 10%;
+    width: 9%;
   }
 
   .tabela-admin .col-acoes-admin {
-    width: 12%;
+    width: 17%;
   }
 
   .tabela-admin th,
   .tabela-admin td {
     border-bottom: 1px solid var(--cor-borda);
-    padding: 14px 16px;
+    padding: 12px 12px;
     text-align: left;
     vertical-align: middle;
   }
@@ -1185,28 +1185,28 @@ export const AdminPage = styled.section`
 
   .tabela-admin .status-pagamento-admin {
     color: #16253b;
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1.2;
   }
 
   .tabela-admin .metodo-pagamento-admin {
     color: #36506f;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
-    line-height: 1.35;
+    line-height: 1.3;
   }
 
   .tabela-admin .detalhe-pagamento-admin {
     color: #5f7692;
-    font-size: 12px;
-    line-height: 1.35;
+    font-size: 11px;
+    line-height: 1.25;
   }
 
   .tabela-admin .referencia-pagamento {
-    margin-top: 4px;
+    margin-top: 2px;
     color: #7a8da8;
-    font-size: 12px;
-    line-height: 1.4;
+    font-size: 11px;
+    line-height: 1.25;
     overflow-wrap: anywhere;
     word-break: break-word;
   }
@@ -1220,7 +1220,7 @@ export const AdminPage = styled.section`
     font-weight: 800;
     color: #16253b;
     white-space: nowrap;
-    padding-right: 24px;
+    padding-right: 12px;
   }
 
   .tabela-admin td em {
@@ -1246,9 +1246,10 @@ export const AdminPage = styled.section`
   }
 
   .acoes-tabela-pedidos {
-    flex-direction: column;
-    align-items: stretch;
-    min-width: 156px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    min-width: 0;
   }
 
   .botao-acao {
@@ -1261,10 +1262,14 @@ export const AdminPage = styled.section`
     background: #fff;
     color: var(--cor-texto);
     cursor: pointer;
-    padding: 8px 10px;
-    font-size: 12px;
+    padding: 8px 8px;
+    font-size: 11px;
     font-weight: 800;
     transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+  }
+
+  .acoes-tabela-pedidos .botao-acao.imprimir {
+    grid-column: 1 / -1;
   }
 
   .botao-acao.editar {
