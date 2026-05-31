@@ -2187,17 +2187,47 @@ export function Admin() {
     }
   }
 
-  function cancelarPedidoAtual() {
+  async function cancelarPedidoAtual() {
     if (!pedidoEditandoId) return
     if (!window.confirm('Cancelar este pedido? Essa ação remove o andamento logístico e marca o pedido como cancelado.')) return
 
-    setPedidoForm((atual) => ({
-      ...atual,
-      status: 'cancelado',
-      fulfillment_status: '',
-      tracking_code: '',
-      tracking_url: '',
-    }))
+    try {
+      const atualizado = await atualizarPedidoAdmin(pedidoEditandoId, {
+        status: 'cancelado',
+        shipping_service_id: pedidoForm.shipping_service_id || null,
+        shipping_service_name: pedidoForm.shipping_service_name || null,
+        shipping_company_name: pedidoForm.shipping_company_name || null,
+        tracking_code: null,
+        tracking_url: null,
+        fulfillment_status: null,
+        recipient_name: pedidoForm.recipient_name || null,
+        recipient_phone: pedidoForm.recipient_phone || null,
+        cep: pedidoForm.cep || null,
+        street: pedidoForm.street || null,
+        number: pedidoForm.number || null,
+        complement: pedidoForm.complement || null,
+        neighborhood: pedidoForm.neighborhood || null,
+        city: pedidoForm.city || null,
+        state: pedidoForm.state || null,
+        reference: pedidoForm.reference || null,
+      })
+
+      setPedidos((atual) => atual.map((pedido) => (
+        pedido.id === atualizado.id ? atualizado : pedido
+      )))
+      setPedidoForm((atual) => ({
+        ...atual,
+        status: atualizado.status || 'cancelado',
+        fulfillment_status: atualizado.fulfillment_status || '',
+        tracking_code: atualizado.tracking_code || '',
+        tracking_url: atualizado.tracking_url || '',
+      }))
+      setPedidoDetalheAbertoId(atualizado.id)
+      setPedidoEditandoId(null)
+      toast.success('Pedido cancelado.')
+    } catch (error) {
+      toast.error(obterMensagemErroUsuario(error))
+    }
   }
 
   async function removerUsuario(item) {
