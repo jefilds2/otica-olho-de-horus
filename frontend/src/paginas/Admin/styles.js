@@ -1093,37 +1093,37 @@ export const AdminPage = styled.section`
   }
 
   .tabela-admin .col-pedido-admin {
-    width: 11%;
-  }
-
-  .tabela-admin .col-cliente-admin {
-    width: 31%;
-  }
-
-  .tabela-admin .col-data-admin {
     width: 10%;
   }
 
+  .tabela-admin .col-cliente-admin {
+    width: 27%;
+  }
+
+  .tabela-admin .col-data-admin {
+    width: 9%;
+  }
+
   .tabela-admin .col-pagamento-admin {
-    width: 25%;
+    width: 22%;
   }
 
   .tabela-admin .col-envio-admin {
-    width: 11%;
+    width: 10%;
   }
 
   .tabela-admin .col-total-admin {
-    width: 8%;
+    width: 10%;
   }
 
   .tabela-admin .col-acoes-admin {
-    width: 17%;
+    width: 12%;
   }
 
   .tabela-admin th,
   .tabela-admin td {
     border-bottom: 1px solid var(--cor-borda);
-    padding: 12px;
+    padding: 14px 16px;
     text-align: left;
     vertical-align: middle;
   }
@@ -1219,6 +1219,8 @@ export const AdminPage = styled.section`
   .tabela-admin .coluna-total-admin {
     font-weight: 800;
     color: #16253b;
+    white-space: nowrap;
+    padding-right: 24px;
   }
 
   .tabela-admin td em {
@@ -1246,7 +1248,7 @@ export const AdminPage = styled.section`
   .acoes-tabela-pedidos {
     flex-direction: column;
     align-items: stretch;
-    min-width: 132px;
+    min-width: 156px;
   }
 
   .botao-acao {
