@@ -46,6 +46,14 @@ const stageMeta = {
     },
 };
 
+const orderedCustomerStages = [
+    'pedido_realizado',
+    'pagamento_confirmado',
+    'em_preparacao',
+    'em_transporte',
+    'entregue',
+];
+
 function isMercadoPagoTestUserEmail(email) {
     return String(email || '').trim().toLowerCase().endsWith('@testuser.com');
 }
@@ -140,15 +148,45 @@ export function getCustomerOrderStageLabel(order) {
 
 export function buildCustomerOrderTimeline(order) {
     const currentStage = getCustomerOrderStage(order);
-    const orderStages = ['pedido_realizado', 'pagamento_confirmado', 'em_preparacao', 'em_transporte', 'entregue'];
-    const currentIndex = orderStages.indexOf(currentStage);
+    const currentIndex = orderedCustomerStages.indexOf(currentStage);
 
-    return orderStages.map((stage, index) => ({
+    return orderedCustomerStages.map((stage, index) => ({
         code: stage,
         label: stageMeta[stage].badge,
         current: stage === currentStage,
         completed: currentIndex >= index,
     }));
+}
+
+function resolveStagesToNotify({ currentStage, lastNotifiedStage, force }) {
+    if (!currentStage || !stageMeta[currentStage]) {
+        return [];
+    }
+
+    if (currentStage === 'cancelado') {
+        if (!force && lastNotifiedStage === 'cancelado') {
+            return [];
+        }
+
+        return ['cancelado'];
+    }
+
+    const currentIndex = orderedCustomerStages.indexOf(currentStage);
+    if (currentIndex === -1) {
+        return [];
+    }
+
+    const lastIndex = orderedCustomerStages.indexOf(lastNotifiedStage);
+
+    if (!force && lastIndex === currentIndex) {
+        return [];
+    }
+
+    const startIndex = force
+        ? Math.max(0, lastIndex + 1)
+        : Math.max(0, lastIndex + 1);
+
+    return orderedCustomerStages.slice(startIndex, currentIndex + 1);
 }
 
 function buildItemsRows(order) {
@@ -288,25 +326,37 @@ export async function notifyOrderStageChange(order, { force = false } = {}) {
         return null;
     }
 
-    const stage = getCustomerOrderStage(order);
+    const currentStage = getCustomerOrderStage(order);
+    const stagesToNotify = resolveStagesToNotify({
+        currentStage,
+        lastNotifiedStage: order.last_notified_stage,
+        force,
+    });
 
-    if (!force && order.last_notified_stage === stage) {
+    if (stagesToNotify.length === 0) {
         return null;
     }
 
     const store = await loadStoreProfile();
-    const stageInfo = stageMeta[stage] || stageMeta.pedido_realizado;
+    let lastDeliveredStage = null;
 
-    const delivery = await sendMail({
-        to: destinationEmail,
-        subject: `${stageInfo.subject} | ${store.name} | Pedido #${order.id}`,
-        html: buildOrderEmailHtml({ order, stage, store }),
-        text: buildOrderEmailText({ order, stage, store }),
-    });
+    for (const stage of stagesToNotify) {
+        const stageInfo = stageMeta[stage] || stageMeta.pedido_realizado;
+        const delivery = await sendMail({
+            to: destinationEmail,
+            subject: `${stageInfo.subject} | ${store.name} | Pedido #${order.id}`,
+            html: buildOrderEmailHtml({ order, stage, store }),
+            text: buildOrderEmailText({ order, stage, store }),
+        });
 
-    if (!delivery?.skipped) {
+        if (delivery?.skipped) {
+            break;
+        }
+
+        lastDeliveredStage = stage;
+        order.last_notified_stage = stage;
         await order.update({ last_notified_stage: stage });
     }
 
-    return stage;
+    return lastDeliveredStage;
 }
