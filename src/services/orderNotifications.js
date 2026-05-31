@@ -1,4 +1,5 @@
 import StoreSetting from '../app/models/StoreSetting.js';
+import Order from '../app/models/Order.js';
 import { getFrontendAppUrl, getFrontendPublicUrl } from '../config/appUrls.js';
 import { sendMail } from './mail.js';
 
@@ -326,36 +327,56 @@ export async function notifyOrderStageChange(order, { force = false } = {}) {
         return null;
     }
 
-    const currentStage = getCustomerOrderStage(order);
-    const stagesToNotify = resolveStagesToNotify({
-        currentStage,
-        lastNotifiedStage: order.last_notified_stage,
-        force,
-    });
-
-    if (stagesToNotify.length === 0) {
-        return null;
-    }
-
     const store = await loadStoreProfile();
     let lastDeliveredStage = null;
+    const transaction = await Order.sequelize.transaction();
 
-    for (const stage of stagesToNotify) {
-        const stageInfo = stageMeta[stage] || stageMeta.pedido_realizado;
-        const delivery = await sendMail({
-            to: destinationEmail,
-            subject: `${stageInfo.subject} | ${store.name} | Pedido #${order.id}`,
-            html: buildOrderEmailHtml({ order, stage, store }),
-            text: buildOrderEmailText({ order, stage, store }),
+    try {
+        const lockedOrder = await Order.findByPk(order.id, {
+            transaction,
+            lock: transaction.LOCK.UPDATE,
         });
 
-        if (delivery?.skipped) {
-            break;
+        if (!lockedOrder) {
+            await transaction.rollback();
+            return null;
         }
 
-        lastDeliveredStage = stage;
-        order.last_notified_stage = stage;
-        await order.update({ last_notified_stage: stage });
+        const currentStage = getCustomerOrderStage(order);
+        const stagesToNotify = resolveStagesToNotify({
+            currentStage,
+            lastNotifiedStage: lockedOrder.last_notified_stage,
+            force,
+        });
+
+        if (stagesToNotify.length === 0) {
+            await transaction.commit();
+            return null;
+        }
+
+        for (const stage of stagesToNotify) {
+            const stageInfo = stageMeta[stage] || stageMeta.pedido_realizado;
+            const delivery = await sendMail({
+                to: destinationEmail,
+                subject: `${stageInfo.subject} | ${store.name} | Pedido #${order.id}`,
+                html: buildOrderEmailHtml({ order, stage, store }),
+                text: buildOrderEmailText({ order, stage, store }),
+            });
+
+            if (delivery?.skipped) {
+                break;
+            }
+
+            lastDeliveredStage = stage;
+            order.last_notified_stage = stage;
+            lockedOrder.last_notified_stage = stage;
+            await lockedOrder.update({ last_notified_stage: stage }, { transaction });
+        }
+
+        await transaction.commit();
+    } catch (error) {
+        await transaction.rollback();
+        throw error;
     }
 
     return lastDeliveredStage;
