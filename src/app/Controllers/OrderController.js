@@ -911,14 +911,6 @@ class OrderController {
                 const wasPaid = order.status === 'pago';
                 const willBePaid = nextOrderStatus === 'pago';
                 const willBeCancelled = nextOrderStatus === 'cancelado';
-                const coupon = order.coupon_code
-                    ? await Coupon.findOne({
-                        where: { code: order.coupon_code },
-                        transaction,
-                        lock: transaction.LOCK.UPDATE,
-                    })
-                    : null;
-
                 if (nextFulfillmentStatus && ['aguardando_pagamento', 'expirado', 'cancelado'].includes(nextOrderStatus)) {
                     await transaction.rollback();
                     return res.status(400).json({ error: 'Atualize o andamento de envio somente após a confirmação do pagamento.' });
@@ -994,22 +986,24 @@ class OrderController {
 
                 if (willBeCancelled) {
                     await restoreOrderInventory(order, transaction);
-
-                    if (wasPaid && coupon && Number(coupon.usage_count) > 0) {
-                        await coupon.update({
-                            usage_count: Math.max(0, Number(coupon.usage_count) - 1),
-                        }, { transaction });
-                    }
                 } else if (willBePaid && !order.inventory_deducted_at) {
                     await decrementOrderInventory(order, transaction);
                     updatePayload.paid_at = order.paid_at || new Date();
                     updatePayload.fulfillment_status = isLocalPickup ? null : (nextFulfillmentStatus || order.fulfillment_status || 'em_preparacao');
 
-                    if (!wasPaid && coupon) {
+                    if (!wasPaid && order.coupon_code) {
+                        const coupon = await Coupon.findOne({
+                            where: { code: order.coupon_code },
+                            transaction,
+                            lock: transaction.LOCK.UPDATE,
+                        });
+
+                        if (coupon) {
                         await coupon.increment('usage_count', {
                             by: 1,
                             transaction,
                         });
+                        }
                     }
                 }
 
