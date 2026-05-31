@@ -604,6 +604,30 @@ async function notifyOrderStageAfterReload(orderId) {
     return order;
 }
 
+async function notifyOrderStageIfChanged({ orderId, previousStage = null, forceIfPending = true }) {
+    const order = await loadAdminOrder(orderId);
+
+    if (!order) {
+        return null;
+    }
+
+    const currentStage = getCustomerOrderStage(order);
+    const stageChanged = previousStage != null && previousStage !== currentStage;
+    const stagePendingNotification = order.last_notified_stage !== currentStage;
+
+    if (stageChanged) {
+        await notifyOrderStageChange(order, { force: true });
+        return loadAdminOrder(orderId);
+    }
+
+    if (forceIfPending && stagePendingNotification) {
+        await notifyOrderStageChange(order, { force: true });
+        return loadAdminOrder(orderId);
+    }
+
+    return order;
+}
+
 async function notifyOrderStageSafely(order) {
     try {
         await notifyOrderStageChange(order);
@@ -702,6 +726,8 @@ class OrderController {
                     return res.status(404).json({ error: 'Pedido não encontrado para esta referência de pagamento.' });
                 }
 
+                const previousStage = getCustomerOrderStage(order);
+
                 if (!paymentId) {
                     await transaction.commit();
                     await order.reload({
@@ -739,7 +765,7 @@ class OrderController {
                     ],
                 });
 
-                await notifyOrderStageAfterReload(order.id);
+                await notifyOrderStageIfChanged({ orderId: order.id, previousStage });
 
                 return res.status(200).json(formatOrder(order));
             } catch (error) {
@@ -803,9 +829,11 @@ class OrderController {
                     return res.status(200).json({ received: true });
                 }
 
+                const previousStage = getCustomerOrderStage(order);
+
                 await syncOrderWithMercadoPagoPayment({ order, payment, transaction });
                 await transaction.commit();
-                await notifyOrderStageAfterReload(order.id);
+                await notifyOrderStageIfChanged({ orderId: order.id, previousStage });
             } catch (error) {
                 await transaction.rollback();
                 throw error;
@@ -869,6 +897,8 @@ class OrderController {
                     await transaction.rollback();
                     return res.status(404).json({ error: 'Pedido não encontrado.' });
                 }
+
+                const previousStage = getCustomerOrderStage(order);
 
                 const nextFulfillmentStatus = req.body.fulfillment_status == null || req.body.fulfillment_status === ''
                     ? null
@@ -999,7 +1029,7 @@ class OrderController {
                     ],
                 });
 
-                await notifyOrderStageAfterReload(order.id);
+                await notifyOrderStageIfChanged({ orderId: order.id, previousStage });
 
                 return res.status(200).json(formatOrder(order));
             } catch (error) {
@@ -1073,6 +1103,7 @@ class OrderController {
                 return res.status(400).json({ error: 'Prepare a etiqueta antes de realizar o checkout no Melhor Envio.' });
             }
 
+            const previousStage = getCustomerOrderStage(order);
             const storeSettings = await StoreSetting.findByPk(1);
             const result = await checkoutMelhorEnvioShipments([order.melhor_envio_order_id], storeSettings);
             const payload = extractTrackingPayload(result);
@@ -1094,7 +1125,7 @@ class OrderController {
             }
 
             const refreshedOrder = await loadAdminOrder(order.id);
-            await notifyOrderStageAfterReload(order.id);
+            await notifyOrderStageIfChanged({ orderId: order.id, previousStage, forceIfPending: false });
             return res.status(200).json(formatOrder(refreshedOrder));
         } catch (error) {
             return res.status(400).json({ error: error.message || 'Erro ao comprar etiqueta no Melhor Envio.' });
@@ -1117,6 +1148,7 @@ class OrderController {
                 return res.status(400).json({ error: 'Compre a etiqueta antes de gerar a etiqueta do Melhor Envio.' });
             }
 
+            const previousStage = getCustomerOrderStage(order);
             const storeSettings = await StoreSetting.findByPk(1);
             const result = await generateMelhorEnvioLabels([order.melhor_envio_order_id], storeSettings);
             const scopedPayload = getMelhorEnvioOrderScopedResponse(result, order.melhor_envio_order_id);
@@ -1143,7 +1175,7 @@ class OrderController {
             await syncOrderTrackingFromMelhorEnvio(order, storeSettings);
 
             const refreshedOrder = await loadAdminOrder(order.id);
-            await notifyOrderStageAfterReload(order.id);
+            await notifyOrderStageIfChanged({ orderId: order.id, previousStage, forceIfPending: false });
             return res.status(200).json(formatOrder(refreshedOrder));
         } catch (error) {
             return res.status(400).json({ error: error.message || 'Erro ao gerar etiqueta no Melhor Envio.' });
@@ -1166,6 +1198,7 @@ class OrderController {
                 return res.status(400).json({ error: 'Gere a etiqueta antes de imprimir a etiqueta do Melhor Envio.' });
             }
 
+            const previousStage = getCustomerOrderStage(order);
             const storeSettings = await StoreSetting.findByPk(1);
             const result = await printMelhorEnvioLabels([order.melhor_envio_order_id], { mode: 'public' }, storeSettings);
             const payload = extractTrackingPayload(result);
@@ -1184,7 +1217,7 @@ class OrderController {
             await syncOrderTrackingFromMelhorEnvio(order, storeSettings);
 
             const refreshedOrder = await loadAdminOrder(order.id);
-            await notifyOrderStageAfterReload(order.id);
+            await notifyOrderStageIfChanged({ orderId: order.id, previousStage, forceIfPending: false });
             return res.status(200).json({
                 order: formatOrder(refreshedOrder),
                 print_url: printUrl,
@@ -1210,13 +1243,14 @@ class OrderController {
                 return res.status(400).json({ error: 'Gere a etiqueta antes de sincronizar o rastreio no Melhor Envio.' });
             }
 
+            const previousStage = getCustomerOrderStage(order);
             const storeSettings = await StoreSetting.findByPk(1);
             const result = await trackMelhorEnvioShipments([order.melhor_envio_order_id], storeSettings);
             const payload = extractTrackingPayload(result);
 
             await applyMelhorEnvioTrackingUpdate(order, payload || {});
             const refreshedOrder = await loadAdminOrder(order.id);
-            await notifyOrderStageAfterReload(order.id);
+            await notifyOrderStageIfChanged({ orderId: order.id, previousStage, forceIfPending: false });
             return res.status(200).json(formatOrder(refreshedOrder));
         } catch (error) {
             return res.status(400).json({ error: error.message || 'Erro ao sincronizar status da etiqueta no Melhor Envio.' });
@@ -1231,6 +1265,7 @@ class OrderController {
                 return res.status(404).json({ error: 'Pedido não encontrado.' });
             }
 
+            const previousStage = getCustomerOrderStage(order);
             await order.update({
                 melhor_envio_order_id: null,
                 melhor_envio_protocol: null,
@@ -1245,7 +1280,7 @@ class OrderController {
             });
 
             const refreshedOrder = await loadAdminOrder(order.id);
-            await notifyOrderStageAfterReload(order.id);
+            await notifyOrderStageIfChanged({ orderId: order.id, previousStage, forceIfPending: false });
             return res.status(200).json(formatOrder(refreshedOrder));
         } catch (error) {
             return res.status(400).json({ error: error.message || 'Erro ao resetar o processo do Melhor Envio.' });
