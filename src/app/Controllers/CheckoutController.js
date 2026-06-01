@@ -40,6 +40,10 @@ function buildPendingUrl() {
     return buildCheckoutReturnUrl('pending');
 }
 
+function getCheckoutRedirectUrl(preference) {
+    return preference?.init_point || preference?.sandbox_init_point || null;
+}
+
 async function notifyOrderStageSafely(order) {
     try {
         await notifyOrderStageChange(order);
@@ -417,7 +421,7 @@ class CheckoutController {
 
                 return res.status(201).json({
                     id: preference.id,
-                    url: preference.sandbox_init_point || preference.init_point,
+                    url: getCheckoutRedirectUrl(preference),
                     orderId: order.id,
                 });
             } catch (error) {
@@ -508,7 +512,7 @@ class CheckoutController {
 
             return res.status(200).json({
                 id: preference.id,
-                url: preference.sandbox_init_point || preference.init_point,
+                url: getCheckoutRedirectUrl(preference),
                 orderId: order.id,
             });
         } catch (error) {
