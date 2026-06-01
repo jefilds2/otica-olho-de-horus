@@ -41,6 +41,39 @@ export function Layout() {
     carregarCategorias()
   }, [])
 
+  useEffect(() => {
+    if (usuario?.admin) {
+      return undefined
+    }
+
+    function handleKeyDown(evento) {
+      const tecla = String(evento.key || '').toLowerCase()
+      const modificador = evento.ctrlKey || evento.metaKey
+
+      const bloquearAtalho =
+        tecla === 'f12'
+        || (modificador && evento.shiftKey && ['i', 'j', 'c'].includes(tecla))
+        || (modificador && tecla === 'u')
+
+      if (bloquearAtalho) {
+        evento.preventDefault()
+        evento.stopPropagation()
+      }
+    }
+
+    function handleContextMenu(evento) {
+      evento.preventDefault()
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('contextmenu', handleContextMenu)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('contextmenu', handleContextMenu)
+    }
+  }, [usuario?.admin])
+
   function enviarBusca(evento) {
     evento.preventDefault()
     const termo = String(termoBusca || '').trim()
