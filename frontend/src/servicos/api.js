@@ -264,6 +264,12 @@ export async function excluirProduto(id) {
   })
 }
 
+export async function alternarStatusProduto(id) {
+  return apiFetch(`/admin/products/${id}/toggle-active`, {
+    method: 'POST',
+  })
+}
+
 export async function atualizarCategoria(id, formData) {
   return apiFetch(`/categories/${id}`, {
     method: 'PUT',

@@ -253,6 +253,9 @@ class CheckoutController {
                 getQuantity: (item) => item.quantity,
                 getProductName: (product) => product.name,
                 missingProductMessage: 'Produto não encontrado durante a montagem do checkout.',
+                inactiveProductMessage: ({ productName }) => (
+                    `Estoque insuficiente para "${productName}". Restam 0 unidade(s) em estoque.`
+                ),
                 insufficientStockMessage: ({ productName, availableQuantity }) => (
                     `Estoque insuficiente para "${productName}". Restam ${availableQuantity} unidade(s) em estoque.`
                 ),
@@ -487,6 +490,9 @@ class CheckoutController {
                 missingProductMessage: ({ productId }) => (
                     `Produto do pedido não encontrado para novo pagamento: ${productId}.`
                 ),
+                inactiveProductMessage: ({ productName }) => (
+                    `Estoque insuficiente para "${productName}". Restam 0 unidade(s) em estoque.`
+                ),
                 insufficientStockMessage: ({ productName, availableQuantity, requestedQuantity }) => (
                     `Estoque insuficiente para "${productName}". O pedido precisa de ${requestedQuantity} unidade(s), mas restam ${availableQuantity} em estoque.`
                 ),
@@ -516,7 +522,10 @@ class CheckoutController {
                 orderId: order.id,
             });
         } catch (error) {
-            if (error.message?.startsWith('Estoque insuficiente') || error.message?.startsWith('Produto do pedido não encontrado')) {
+            if (
+                error.message?.startsWith('Estoque insuficiente')
+                || error.message?.startsWith('Produto do pedido não encontrado')
+            ) {
                 return res.status(400).json({ error: error.message });
             }
 

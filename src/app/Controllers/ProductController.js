@@ -90,6 +90,7 @@ class ProductController {
         try {
             const products = await Product.findAll({
                 where: {
+                    is_active: true,
                     stock_quantity: {
                         [Op.gt]: 0,
                     },
@@ -225,6 +226,7 @@ class ProductController {
                 gender: normalizeText(req.body.gender),
                 path,
                 image_paths: JSON.stringify(imagePaths),
+                is_active: req.body.is_active === undefined ? true : String(req.body.is_active) === 'true',
                 ...installments,
             });
 
@@ -342,6 +344,7 @@ class ProductController {
                 gender: normalizeText(req.body.gender),
                 path: combinedImagePaths[0],
                 image_paths: JSON.stringify(combinedImagePaths),
+                is_active: req.body.is_active === undefined ? product.is_active : String(req.body.is_active) === 'true',
                 ...installments,
             });
 
@@ -375,6 +378,24 @@ class ProductController {
             return res.status(204).send();
         } catch (error) {
             return sendServerError(res, 'Erro ao excluir produto', error);
+        }
+    }
+
+    async toggleActive(req, res) {
+        try {
+            const product = await Product.findByPk(req.params.id);
+
+            if (!product) {
+                return res.status(404).json({ error: 'Produto não encontrado' });
+            }
+
+            await product.update({
+                is_active: !product.is_active,
+            });
+
+            return res.status(200).json(product);
+        } catch (error) {
+            return sendServerError(res, 'Erro ao alterar status do produto', error);
         }
     }
 }

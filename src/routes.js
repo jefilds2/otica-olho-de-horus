@@ -64,6 +64,7 @@ adminRoutes.get("/users", UserController.indexAdmin);
 adminRoutes.put("/users/:id", writeRateLimit, UserController.updateAdmin);
 adminRoutes.delete("/users/:id", writeRateLimit, UserController.destroyAdmin);
 adminRoutes.get("/products", ProductController.indexAdmin);
+adminRoutes.post("/products/:id/toggle-active", writeRateLimit, ProductController.toggleActive);
 adminRoutes.get("/coupons", CouponController.indexAdmin);
 adminRoutes.post("/coupons", writeRateLimit, CouponController.storeAdmin);
 adminRoutes.put("/coupons/:id", writeRateLimit, CouponController.updateAdmin);

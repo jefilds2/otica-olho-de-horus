@@ -10,6 +10,7 @@ import {
   calcularFrete,
   confirmarCheckoutPagamento,
   criarSessaoCheckout,
+  listarProdutos,
   listarMeusEnderecos,
   obterMensagemErroUsuario,
   obterImagensProduto,
@@ -31,6 +32,7 @@ export function Carrinho() {
   const [cupomCodigo, setCupomCodigo] = useState('')
   const [cupomAplicado, setCupomAplicado] = useState(null)
   const [cupomCarregando, setCupomCarregando] = useState(false)
+  const [produtosDisponiveis, setProdutosDisponiveis] = useState([])
   const exibirParcelamento = itens.length > 0 && itens.every((item) => item.installments_enabled !== false)
   const freteSelecionado = opcoesFrete.find((opcao) => opcao.service_id === freteSelecionadoId) || null
   const descontoCupom = Number(cupomAplicado?.discount_amount || 0)
@@ -38,11 +40,43 @@ export function Carrinho() {
   const installmentsCount = exibirParcelamento
     ? Math.max(1, ...itens.map((item) => Number(item.installments_count || 1)))
     : 1
+  const produtosDisponiveisMap = new Map(produtosDisponiveis.map((produto) => [produto.id, produto]))
+  const itensIndisponiveis = itens.filter((item) => {
+    const produtoAtual = produtosDisponiveisMap.get(item.id)
+
+    if (!produtoAtual) return true
+
+    return Number(produtoAtual.stock_quantity || 0) < Number(item.quantidade || 0)
+  })
+  const checkoutBloqueado = itensIndisponiveis.length > 0
   const assinaturaItens = JSON.stringify(itens.map((item) => ({
     id: item.id,
     quantidade: item.quantidade,
     cor: item.selected_color_name || '',
   })))
+
+  useEffect(() => {
+    let ativo = true
+
+    async function carregarProdutosDisponiveis() {
+      try {
+        const produtosApi = await listarProdutos()
+        if (ativo) {
+          setProdutosDisponiveis(produtosApi)
+        }
+      } catch (error) {
+        if (ativo) {
+          toast.error(obterMensagemErroUsuario(error))
+        }
+      }
+    }
+
+    carregarProdutosDisponiveis()
+
+    return () => {
+      ativo = false
+    }
+  }, [assinaturaItens])
 
   useEffect(() => {
     async function carregarEnderecos() {
@@ -144,6 +178,11 @@ export function Carrinho() {
   }, [assinaturaItens])
 
   async function buscarFrete() {
+    if (checkoutBloqueado) {
+      toast.info('Remova do carrinho os produtos indisponíveis antes de calcular o frete.')
+      return
+    }
+
     if (!enderecoSelecionadoId) {
       toast.info('Selecione um endereço antes de calcular o frete.')
       return
@@ -209,6 +248,11 @@ export function Carrinho() {
   }
 
   async function finalizarPedido() {
+    if (checkoutBloqueado) {
+      toast.error('Há produto indisponível no carrinho. Remova-o para continuar.')
+      return
+    }
+
     if (!usuario) {
       toast.info('Faça login para continuar o checkout.')
       return
@@ -272,6 +316,8 @@ export function Carrinho() {
         <div className="lista-carrinho">
           {itens.map((item) => {
             const imagemPrincipal = obterImagensProduto(item)[0]
+            const produtoAtual = produtosDisponiveisMap.get(item.id)
+            const itemIndisponivel = !produtoAtual || Number(produtoAtual.stock_quantity || 0) < Number(item.quantidade || 0)
 
             return (
             <article className="item-carrinho" key={item.cart_key || item.id}>
@@ -292,6 +338,7 @@ export function Carrinho() {
                 </div>
 
                 {item.selected_color_name ? <p>Cor: {item.selected_color_name}</p> : null}
+                {itemIndisponivel ? <p>Produto sem estoque no momento.</p> : null}
 
                 <div className="item-carrinho-rodape">
                   <div className="controle-quantidade">
@@ -305,7 +352,7 @@ export function Carrinho() {
                     <span>{item.quantidade}</span>
                     <button
                       onClick={() => atualizarQuantidade(item.cart_key || item.id, item.quantidade + 1)}
-                      disabled={item.quantidade >= Number(item.stock_quantity)}
+                      disabled={itemIndisponivel || item.quantidade >= Number(produtoAtual?.stock_quantity || item.stock_quantity)}
                       aria-label="Aumentar quantidade"
                     >
                       <Plus size={14} />
@@ -442,7 +489,13 @@ export function Carrinho() {
           </div>
           {exibirParcelamento && <p className="parcelamento">ou {installmentsCount}x de {moeda.format(totalComFrete / installmentsCount)} sem juros</p>}
 
-          <button className="botao largura-total destaque" onClick={finalizarPedido} disabled={checkoutCarregando}>
+          {checkoutBloqueado ? (
+            <div className="estado-frete">
+              <p>Existe produto inativo ou sem estoque no carrinho. Remova esse item para continuar.</p>
+            </div>
+          ) : null}
+
+          <button className="botao largura-total destaque" onClick={finalizarPedido} disabled={checkoutCarregando || checkoutBloqueado}>
             {checkoutCarregando ? 'Redirecionando para pagamento...' : 'Finalizar pedido'}
           </button>
           <button className="limpar-carrinho" onClick={limparCarrinho}>

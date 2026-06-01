@@ -4,6 +4,7 @@ import { literal } from 'sequelize';
 import Product from '../models/Product.js';
 import { findValidCouponByCode, normalizeCouponCode } from '../../services/coupons.js';
 import { sendServerError } from '../../utils/http.js';
+import { assertStockAvailability } from '../../utils/inventory.js';
 
 function normalizeOptionalString(value) {
     if (value == null) return null;
@@ -118,6 +119,20 @@ async function calculateCartSubtotal(items) {
     }
 
     const productsById = new Map(products.map((product) => [product.id, product]));
+    assertStockAvailability({
+        items: normalizedItems,
+        productsById,
+        getProductId: (item) => item.id,
+        getQuantity: (item) => item.quantity,
+        getProductName: (product) => product.name,
+        missingProductMessage: 'Um ou mais produtos do carrinho não foram encontrados.',
+        inactiveProductMessage: ({ productName }) => (
+            `Estoque insuficiente para "${productName}". Restam 0 unidade(s) em estoque.`
+        ),
+        insufficientStockMessage: ({ productName, availableQuantity }) => (
+            `Estoque insuficiente para "${productName}". Restam ${availableQuantity} unidade(s) em estoque.`
+        ),
+    });
 
     return normalizedItems.reduce((total, item) => {
         const product = productsById.get(item.id);

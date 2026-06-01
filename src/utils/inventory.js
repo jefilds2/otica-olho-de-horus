@@ -30,6 +30,7 @@ export function assertStockAvailability({
     getQuantity,
     getProductName = null,
     missingProductMessage = 'Produto não encontrado.',
+    inactiveProductMessage = null,
     insufficientStockMessage,
 }) {
     const requestedByProductId = aggregateRequestedQuantities(items, getProductId, getQuantity);
@@ -48,6 +49,15 @@ export function assertStockAvailability({
         const productName = typeof getProductName === 'function'
             ? getProductName(product, productId)
             : product?.name || `Produto ${productId}`;
+
+        if (product?.is_active === false) {
+            throw new Error(
+                typeof inactiveProductMessage === 'function'
+                    ? inactiveProductMessage({ product, productId, productName })
+                    : inactiveProductMessage || `O produto "${productName}" não está disponível no momento.`
+            );
+        }
+
         const availableQuantity = normalizeQuantity(product.stock_quantity);
 
         if (availableQuantity < requestedQuantity) {

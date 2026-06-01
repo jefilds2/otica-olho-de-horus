@@ -4,6 +4,7 @@ import Product from '../models/Product.js';
 import StoreSetting from '../models/StoreSetting.js';
 import { calculateShippingQuotes } from '../../services/shipping.js';
 import { sendServerError } from '../../utils/http.js';
+import { assertStockAvailability } from '../../utils/inventory.js';
 
 const schema = Yup.object({
     address_id: Yup.number().integer().required(),
@@ -45,12 +46,23 @@ class ShippingController {
             }
 
             const productMap = new Map(products.map((product) => [product.id, product]));
+            assertStockAvailability({
+                items: normalizedItems,
+                productsById: productMap,
+                getProductId: (item) => item.id,
+                getQuantity: (item) => item.quantity,
+                getProductName: (product) => product.name,
+                missingProductMessage: 'Um ou mais produtos do carrinho não foram encontrados.',
+                inactiveProductMessage: ({ productName }) => (
+                    `Estoque insuficiente para "${productName}". Restam 0 unidade(s) em estoque.`
+                ),
+                insufficientStockMessage: ({ productName, availableQuantity }) => (
+                    `Estoque insuficiente para "${productName}". Restam ${availableQuantity} unidade(s) em estoque.`
+                ),
+            });
+
             const cartItems = normalizedItems.map((item) => {
                 const product = productMap.get(item.id);
-
-                if (Number(product.stock_quantity) < item.quantity) {
-                    throw new Error(`Estoque insuficiente para "${product.name}". Restam ${Number(product.stock_quantity)} unidade(s) em estoque.`);
-                }
 
                 return {
                     id: product.id,

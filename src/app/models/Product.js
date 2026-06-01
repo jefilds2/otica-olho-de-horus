@@ -44,6 +44,11 @@ class Product extends Model {
                 allowNull: false,
                 defaultValue: 0,
             },
+            is_active: {
+                type: Sequelize.BOOLEAN,
+                allowNull: false,
+                defaultValue: true,
+            },
             installments_enabled: {
                 type: Sequelize.BOOLEAN,
                 allowNull: false,

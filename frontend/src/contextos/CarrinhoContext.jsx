@@ -30,6 +30,11 @@ export function CarrinhoProvider({ children }) {
   }, [itens])
 
   function adicionarProduto(produto, opcoes = {}) {
+    if (produto?.is_active === false) {
+      toast.warning('Produto sem estoque no momento.')
+      return
+    }
+
     if (Number(produto.stock_quantity) <= 0) {
       toast.warning('Produto sem estoque no momento.')
       return

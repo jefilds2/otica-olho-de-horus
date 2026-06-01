@@ -36,6 +36,7 @@ import {
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { useAuth } from '../../contextos/AuthContext'
 import {
+  alternarStatusProduto,
   atualizarCategoria,
   atualizarCupomAdmin,
   comprarEtiquetaMelhorEnvio,
@@ -51,7 +52,6 @@ import {
   cadastrarProduto,
   excluirCategoria,
   excluirCupomAdmin,
-  excluirProduto,
   excluirUsuarioAdmin,
   listarCategorias,
   listarCuponsAdmin,
@@ -89,6 +89,10 @@ function normalizarTextoBusca(valor) {
 const categoriaInicial = { name: '', file: null, previewUrl: '' }
 
 const corDisponivelInicial = { name: '', hex: '#223758' }
+
+function produtoEstaAtivo(produto) {
+  return produto?.is_active !== false
+}
 const CHAVE_NOTIFICACOES_VISUALIZADAS = 'admin.notificacoes.visualizadas'
 const CHAVE_NOTIFICACOES_EXCLUIDAS = 'admin.notificacoes.excluidas'
 const RECORTE_VIEWPORT = 320
@@ -1041,7 +1045,7 @@ export function Admin() {
   const resumo = useMemo(() => ({
     produtos: produtos.length,
     categorias: categorias.length,
-    estoqueBaixo: produtos.filter((produto) => Number(produto.stock_quantity) <= 3).length,
+    estoqueBaixo: produtos.filter((produto) => produtoEstaAtivo(produto) && Number(produto.stock_quantity) <= 3).length,
     produtosEmPromocao: produtos.filter((produto) => produto.old_price).length,
     pedidos: pedidos.length,
     pedidosPagos: pedidos.filter((pedido) => pedido.status === 'pago').length,
@@ -1063,7 +1067,7 @@ export function Admin() {
   const notificacoesAdmin = useMemo(() => {
     const pendentes = pedidos.filter((pedido) => pedido.status === 'aguardando_pagamento')
     const processando = pedidos.filter((pedido) => pedido.status === 'processando')
-    const estoqueCritico = produtos.filter((produto) => Number(produto.stock_quantity || 0) <= 3)
+    const estoqueCritico = produtos.filter((produto) => produtoEstaAtivo(produto) && Number(produto.stock_quantity || 0) <= 3)
 
     const notificacoes = []
 
@@ -2031,15 +2035,14 @@ export function Admin() {
     }))
   }
 
-  async function removerProduto(produto) {
-    if (!window.confirm(`Excluir o produto "${produto.name}"?`)) return
+  async function alternarProdutoAtivo(produto) {
+    const proximoStatus = produtoEstaAtivo(produto) ? 'desativar' : 'ativar'
+
+    if (!window.confirm(`${proximoStatus === 'desativar' ? 'Desativar' : 'Ativar'} o produto "${produto.name}"?`)) return
 
     try {
-      await excluirProduto(produto.id)
-      toast.success('Produto excluído.')
-      if (produtoEditandoId === produto.id) {
-        resetarFormularioProduto()
-      }
+      const atualizado = await alternarStatusProduto(produto.id)
+      toast.success(`Produto ${atualizado?.is_active === false ? 'desativado' : 'ativado'}.`)
       await carregarDados()
     } catch (error) {
       toast.error(obterMensagemErroUsuario(error))
@@ -2792,8 +2795,8 @@ export function Admin() {
               <div className={`admin-duas-colunas admin-duas-colunas-categorias ${formCategoriaAberto ? 'com-formulario' : 'sem-formulario'}`}>
                 <div className="admin-card lista-categorias-card">
                   <h2>Estoque baixo</h2>
-                  {produtos.filter((produto) => Number(produto.stock_quantity) <= 3).length > 0 ? (
-                    produtos.filter((produto) => Number(produto.stock_quantity) <= 3).slice(0, 5).map((produto) => (
+                  {produtos.filter((produto) => produtoEstaAtivo(produto) && Number(produto.stock_quantity) <= 3).length > 0 ? (
+                    produtos.filter((produto) => produtoEstaAtivo(produto) && Number(produto.stock_quantity) <= 3).slice(0, 5).map((produto) => (
                       <div className="admin-lista-item" key={produto.id}>
                         <img src={obterImagensProduto(produto)[0]} alt={produto.name} />
                         <div><strong>{produto.name}</strong><span>{produto.brand}</span></div>
@@ -2943,16 +2946,25 @@ export function Admin() {
                               </button>
                             )}
                           </td>
-                          <td><span className="badge sucesso">Ativo</span></td>
+                          <td>
+                            <button
+                              className={`badge ${produtoEstaAtivo(produto) ? 'sucesso' : 'perigo'}`}
+                              type="button"
+                              onClick={() => alternarProdutoAtivo(produto)}
+                              title={produtoEstaAtivo(produto) ? 'Clique para desativar o produto' : 'Clique para ativar o produto'}
+                            >
+                              {produtoEstaAtivo(produto) ? 'Ativo' : 'Inativo'}
+                            </button>
+                          </td>
                           <td>
                             <div className="acoes-tabela">
                               <button className="botao-acao editar" type="button" onClick={() => editarProduto(produto)}>
                                 <Pencil size={15} />
                                 Editar
                               </button>
-                              <button className="botao-acao excluir" type="button" onClick={() => removerProduto(produto)}>
+                              <button className={`botao-acao ${produtoEstaAtivo(produto) ? 'excluir' : 'salvar'}`} type="button" onClick={() => alternarProdutoAtivo(produto)}>
                                 <Trash2 size={15} />
-                                Excluir
+                                {produtoEstaAtivo(produto) ? 'Desativar' : 'Ativar'}
                               </button>
                             </div>
                           </td>
