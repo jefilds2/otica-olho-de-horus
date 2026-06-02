@@ -91,7 +91,9 @@ function buildPreferenceItemsFromOrder(order) {
     ];
 }
 
-function getMaxInstallmentsFromProducts(products = []) {
+const DEFAULT_MAX_TOTAL_INSTALLMENTS = 12;
+
+function getInterestFreeInstallmentsFromProducts(products = []) {
     if (!Array.isArray(products) || products.length === 0) {
         return 1;
     }
@@ -100,10 +102,18 @@ function getMaxInstallmentsFromProducts(products = []) {
         return 1;
     }
 
-    return Math.max(
-        1,
+    return Math.max(1, Math.min(
         ...products.map((product) => Math.max(1, Number(product?.installments_count || 1)))
+    ));
+}
+
+function getMaxTotalInstallments(interestFreeInstallments = 1) {
+    const configuredMax = Math.max(
+        1,
+        Number.parseInt(process.env.MERCADO_PAGO_MAX_INSTALLMENTS || `${DEFAULT_MAX_TOTAL_INSTALLMENTS}`, 10) || DEFAULT_MAX_TOTAL_INSTALLMENTS
     );
+
+    return Math.max(configuredMax, Math.max(1, Number(interestFreeInstallments || 1)));
 }
 
 function shouldSendPayerEmail(payerEmail) {
@@ -123,8 +133,16 @@ function shouldSendPayerEmail(payerEmail) {
     return true;
 }
 
-function buildPreferencePayload({ items, payerEmail, externalReference, backendPublicUrl = null, maxInstallments = 1 }) {
+function buildPreferencePayload({
+    items,
+    payerEmail,
+    externalReference,
+    backendPublicUrl = null,
+    maxInstallments = 1,
+    interestFreeInstallments = 1,
+}) {
     const notificationUrl = getMercadoPagoNotificationUrl(backendPublicUrl);
+    const differentialPricingId = Number.parseInt(process.env.MERCADO_PAGO_DIFFERENTIAL_PRICING_ID || '', 10);
 
     return {
         items,
@@ -139,7 +157,11 @@ function buildPreferencePayload({ items, payerEmail, externalReference, backendP
         notification_url: notificationUrl || undefined,
         payment_methods: {
             installments: Math.max(1, Number(maxInstallments || 1)),
+            default_installments: Math.max(1, Number(interestFreeInstallments || 1)),
         },
+        differential_pricing: Number.isInteger(differentialPricingId) && differentialPricingId > 0
+            ? { id: differentialPricingId }
+            : undefined,
     };
 }
 
@@ -244,7 +266,8 @@ class CheckoutController {
             }
 
             const productsById = new Map(products.map((product) => [product.id, product]));
-            const maxInstallments = getMaxInstallmentsFromProducts(products);
+            const interestFreeInstallments = getInterestFreeInstallmentsFromProducts(products);
+            const maxInstallments = getMaxTotalInstallments(interestFreeInstallments);
 
             assertStockAvailability({
                 items: normalizedItems,
@@ -383,6 +406,7 @@ class CheckoutController {
                     externalReference: order.id,
                     backendPublicUrl: null,
                     maxInstallments,
+                    interestFreeInstallments,
                 }));
 
                 await order.update({
@@ -498,9 +522,10 @@ class CheckoutController {
                 ),
             });
 
-            const maxInstallments = retryProducts.length === retryProductIds.length
-                ? getMaxInstallmentsFromProducts(retryProducts)
+            const interestFreeInstallments = retryProducts.length === retryProductIds.length
+                ? getInterestFreeInstallmentsFromProducts(retryProducts)
                 : 1;
+            const maxInstallments = getMaxTotalInstallments(interestFreeInstallments);
 
             const preference = await createCheckoutProPreference(buildPreferencePayload({
                 items: buildPreferenceItemsFromOrder(order),
@@ -508,6 +533,7 @@ class CheckoutController {
                 externalReference: order.id,
                 backendPublicUrl: null,
                 maxInstallments,
+                interestFreeInstallments,
             }));
 
             await order.update({
