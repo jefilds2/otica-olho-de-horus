@@ -74,9 +74,9 @@ module.exports = {
     await queryInterface.bulkInsert('store_settings', [{
       id: 1,
       store_name: 'Ótica Olho de Hórus',
-      cnpj: '***REMOVED***',
-      contact_email: 'contato@oticaolhodehorus.com.br',
-      contact_phone: '+55 33 9860-2063',
+      cnpj: null,
+      contact_email: null,
+      contact_phone: null,
       free_shipping_enabled: false,
       free_shipping_min_amount: null,
       created_at: new Date(),

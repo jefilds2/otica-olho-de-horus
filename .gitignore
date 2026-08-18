@@ -14,3 +14,10 @@ CNPJ.txt
 !README.md
 *.pdf
 *.txt
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+secrets*
+*-local.png
