@@ -12,6 +12,28 @@ export function Home() {
   const [produtos, setProdutos] = useState([])
   const [categorias, setCategorias] = useState([])
   const [carregando, setCarregando] = useState(true)
+  const faqItems = [
+    {
+      question: 'A Ótica Olho de Hórus atende em Guanhães-MG?',
+      answer: 'Sim. A Ótica Olho de Hórus realiza atendimento em Guanhães-MG com loja física na Praça JK, 317 - Centro.',
+    },
+    {
+      question: 'A ótica trabalha com óculos de grau?',
+      answer: 'Sim. O atendimento da ótica inclui óculos de grau, armações e lentes.',
+    },
+    {
+      question: 'A ótica possui óculos de sol?',
+      answer: 'Sim. A vitrine online apresenta opções de óculos de sol e outros modelos.',
+    },
+    {
+      question: 'Posso tirar dúvidas pelo WhatsApp?',
+      answer: 'Sim. O WhatsApp da loja está disponível para dúvidas antes da visita presencial.',
+    },
+    {
+      question: 'Onde fica a Ótica Olho de Hórus?',
+      answer: 'A loja fica na Praça JK, 317 - Centro, em Guanhães-MG.',
+    },
+  ]
 
   useEffect(() => {
     async function carregarDados() {
@@ -33,7 +55,7 @@ export function Home() {
   const produtosDestaque = produtos.slice(0, 4)
   const localBusinessSchema = {
     '@context': 'https://schema.org',
-    '@type': 'Store',
+    '@type': 'Optician',
     name: 'Ótica Olho de Hórus',
     url: seoDefaults.siteUrl,
     image: `${seoDefaults.siteUrl}/logo-completa.png`,
@@ -53,23 +75,36 @@ export function Home() {
       },
     ],
   }
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqItems.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer,
+      },
+    })),
+  }
 
   return (
     <HomePage>
       <SeoHead
-        title="Ótica Olho de Hórus | Ótica em Guanhães - MG"
-        description="Ótica em Guanhães - MG com óculos de grau, óculos de sol, armações e atendimento local com apoio online na Ótica Olho de Hórus."
+        title="Ótica em Guanhães-MG | Ótica Olho de Hórus"
+        description="Conheça a Ótica Olho de Hórus em Guanhães-MG. Atendimento para óculos de grau, óculos de sol, armações e lentes, com contato pelo WhatsApp e atendimento presencial."
         canonical="/"
         image={`${seoDefaults.siteUrl}/modelo-oculos.jpg`}
-        schema={localBusinessSchema}
+        schema={[localBusinessSchema, faqSchema]}
       />
       <section className="hero">
         <div className="hero-texto">
           <span className="etiqueta">Nova vitrine digital da Ótica Olho de Hórus</span>
-          <h1>Enxergue com <span>clareza</span>, escolha com estilo</h1>
+          <h1>Ótica Olho de Hórus em Guanhães-MG</h1>
           <p>
-            Óculos de grau, óculos de sol e armações com atendimento próximo em Guanhães
-            para orientar sua escolha e acompanhar cada etapa da compra.
+            Ótica em Guanhães-MG com atendimento para óculos de grau, óculos de sol,
+            armações e lentes, unindo loja física e contato pelo WhatsApp para orientar
+            sua escolha.
           </p>
           <div className="grupo-botoes">
             <Link className="botao destaque" to="/produtos">
@@ -105,6 +140,26 @@ export function Home() {
         <div><strong>Retirada na loja</strong><span>Praça JK, 317 - Centro - Guanhães/MG</span></div>
         <div><strong>Atendimento no WhatsApp</strong><span>Suporte rápido para orçamento e dúvidas</span></div>
         <div><strong>Catálogo em expansão</strong><span>Base pronta para produtos, promoções e pedidos</span></div>
+      </section>
+
+      <section className="secao seo-local">
+        <div className="seo-local-card">
+          <div className="titulo-secao">
+            <div>
+              <h2>Ótica em Guanhães para óculos de grau, óculos de sol e armações</h2>
+              <p>
+                A Ótica Olho de Hórus atende em Guanhães-MG com opções em óculos de grau,
+                óculos de sol, armações e lentes para diferentes estilos e necessidades.
+                Pelo WhatsApp, o cliente pode tirar dúvidas antes de visitar a loja.
+              </p>
+            </div>
+          </div>
+          <div className="seo-local-topicos">
+            <span>Óculos de grau em Guanhães-MG</span>
+            <span>Óculos de sol em Guanhães-MG</span>
+            <span>Armações e lentes em Guanhães-MG</span>
+          </div>
+        </div>
       </section>
 
       <section className="secao">
@@ -202,6 +257,24 @@ export function Home() {
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
           />
+        </div>
+      </section>
+
+      <section className="secao faq-home">
+        <div className="titulo-secao">
+          <div>
+            <h2>Perguntas frequentes</h2>
+            <p>Respostas rápidas sobre atendimento, WhatsApp e localização da ótica.</p>
+          </div>
+        </div>
+
+        <div className="faq-lista">
+          {faqItems.map((item) => (
+            <details key={item.question}>
+              <summary>{item.question}</summary>
+              <p>{item.answer}</p>
+            </details>
+          ))}
         </div>
       </section>
 

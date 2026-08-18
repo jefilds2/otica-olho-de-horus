@@ -45,12 +45,8 @@ export const HomePage = styled.div`
   .hero h1 {
     margin: 0;
     font-family: "Playfair Display", Georgia, "Times New Roman", serif;
-    font-size: clamp(36px, 5vw, 64px);
-    line-height: 1.02;
-  }
-
-  .hero h1 span {
-    color: var(--cor-dourada);
+    font-size: clamp(34px, 4.2vw, 56px);
+    line-height: 1.08;
   }
 
   .hero p {
@@ -178,6 +174,47 @@ export const HomePage = styled.div`
     color: var(--cor-texto-suave);
     font-size: 14px;
     line-height: 1.55;
+  }
+
+  .seo-local {
+    padding-top: 40px;
+    padding-bottom: 24px;
+  }
+
+  .seo-local-card {
+    padding: 28px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(241, 243, 246, 0.72));
+    box-shadow: var(--sombra);
+  }
+
+  .seo-local-card .titulo-secao {
+    margin-bottom: 18px;
+  }
+
+  .seo-local-card .titulo-secao p {
+    max-width: 74ch;
+    margin: 0;
+    line-height: 1.75;
+  }
+
+  .seo-local-topicos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .seo-local-topicos span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 0 14px;
+    border: 1px solid rgba(34, 55, 88, 0.12);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--cor-primaria);
+    font-weight: 700;
   }
 
   .grade-produtos,
@@ -310,6 +347,38 @@ export const HomePage = styled.div`
     border: 0;
   }
 
+  .faq-home {
+    padding-top: 8px;
+  }
+
+  .faq-lista {
+    display: grid;
+    gap: 14px;
+  }
+
+  .faq-lista details {
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    background: var(--cor-card);
+    padding: 18px 20px;
+  }
+
+  .faq-lista summary {
+    cursor: pointer;
+    font-weight: 800;
+    list-style: none;
+  }
+
+  .faq-lista summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-lista p {
+    margin: 12px 0 0;
+    color: var(--cor-texto-suave);
+    line-height: 1.7;
+  }
+
   .cta-whatsapp {
     display: flex;
     align-items: center;
@@ -392,6 +461,11 @@ export const HomePage = styled.div`
     .cta-whatsapp .botao {
       width: 100%;
       justify-content: center;
+    }
+
+    .seo-local-card,
+    .faq-lista details {
+      padding: 18px;
     }
 
     .newsletter form {
